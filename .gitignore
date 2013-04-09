@@ -1,0 +1,5 @@
+*.sdf
+ipch/
+enc_temp_folder/
+*.opensdf
+Debug/
