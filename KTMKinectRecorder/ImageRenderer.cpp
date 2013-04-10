@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 
 //#include "stdafx.h"
-#include "ImageRenderer.h"
+#include "ImageRenderer.hpp"
 
 /// <summary>
 /// Constructor

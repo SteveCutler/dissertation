@@ -1,4 +1,4 @@
-#include "KTMKinectWrapper.h"
+#include "KTMKinectWrapper.hpp"
 
 KTMKinectWrapper::KTMKinectWrapper() :
 	pKinectSensor(NULL),
@@ -63,43 +63,52 @@ bool KTMKinectWrapper::setOutFile(char* fileName){
 }
 
 bool KTMKinectWrapper::setOutFile(char* fileName, char* c){
+#ifdef KTM_USE_OPEN_CV
 	/* If no codec is specified prompt the user for a codec */
 	if(NULL != c)
 		outVideo.open(fileName, CV_FOURCC(c[0],c[1],c[2],c[3]), 25, cv::Size(OUT_FRAME_WIDTH, OUT_FRAME_HEIGHT), true);
 	else
 		outVideo.open(fileName, -1, 30, cv::Size(OUT_FRAME_WIDTH, OUT_FRAME_HEIGHT), true);
-
-	//boostOutFile = new boost::iostreams::basic_file_sink<char>(fileName, std::ios_base::binary);
-
-	//pFile = fopen(fileName, "wb");
-
 	return outVideo.isOpened();
+#endif
+#ifdef KTM_USE_BOOST
+	boostOutFile = new boost::iostreams::basic_file_sink<char>(fileName, std::ios_base::binary);
+	return NULL != boostOutFile;
+#endif
+#ifdef KTM_USE_STD_FILE
+	//pFile = fopen(fileName, "wb");
+	return NULL != pFile;
+#endif
 }
 
 void KTMKinectWrapper::record(bool r){
-	if(r){
+#ifdef KTM_USE_OPEN_CV
+	if(r)
 		cv::namedWindow("Recording - Combined");
-	}else{
+	else
 		cv::destroyWindow("Recording - Combined");
-	}
+#endif
 	recordEnable = r;
 }
 
 bool KTMKinectWrapper::releaseOutFile(){
+#ifdef KTM_USE_OPEN_CV
 	if(outVideo.isOpened())
 		outVideo.release();
-
+#endif
+#ifdef KTM_USE_BOOST
 	if(NULL != boostOutFile){
 		boostOutFile->flush();
 		boostOutFile->close();
 		boostOutFile = NULL;
 	}
-
+#endif
+#ifdef KTM_USE_STD_FILE
 	if(NULL != pFile){
 		fclose(pFile);
 		pFile = NULL;
 	}
-
+#endif
 	return true;
 }
 
@@ -202,7 +211,7 @@ USHORT* KTMKinectWrapper::nextFrame(){
 		dataDepth = this->getDepthFromKinectStream();
 	}
 
-	
+#ifdef KTM_USE_OPEN_CV	
 	cv::Mat matCombined = cv::Mat::zeros(RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH, CV_8UC4);
 	cv::Mat matRGBA = cv::Mat::zeros(RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH, CV_8UC4);
 	if(NULL != RGBdata){
@@ -221,36 +230,39 @@ USHORT* KTMKinectWrapper::nextFrame(){
 		cv::imshow("Recording - Combined", matCombined);
 		outVideo.write(matCombined);
 	}
+#endif
+#ifdef KTM_USE_BOOST
+	if(NULL != boostOutFile){
+		if(boostOutFile->is_open() || !streamingFromFile && recordEnable){
+			//if(NULL != RGBdata)
+			//	boostOutFile->write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
+			//else
+			//	boostOutFile->write(mRGBDataHeap, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
 
-	//if(NULL != boostOutFile){
-	//	if(boostOutFile->is_open() || !streamingFromFile && recordEnable){
-	//		//if(NULL != RGBdata)
-	//		//	boostOutFile->write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
-	//		//else
-	//		//	boostOutFile->write(mRGBDataHeap, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
+			if(NULL != dataDepth)
+				boostOutFile->write((char*)dataDepth, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+			else
+				boostOutFile->write((char*)mDataHeap, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
 
-	//		if(NULL != dataDepth)
-	//			boostOutFile->write((char*)dataDepth, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
-	//		else
-	//			boostOutFile->write((char*)mDataHeap, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+			boostOutFile->flush();
+		}
+	}
+#endif
+#ifdef KTM_USE_STD_FILE
+	if(NULL != pFile){
+		if(!streamingFromFile && recordEnable){
+			if(NULL != RGBdata)
+				fwrite(RGBdata, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
+			else
+				fwrite(mRGBDataHeap, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
 
-	//		boostOutFile->flush();
-	//	}
-	//}
-
-	//if(NULL != pFile){
-	//	if(!streamingFromFile && recordEnable){
-	//		if(NULL != RGBdata)
-	//			fwrite(RGBdata, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
-	//		else
-	//			fwrite(mRGBDataHeap, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
-
-	//		if(NULL != dataDepth)
-	//			fwrite(dataDepth, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
-	//		else
-	//			fwrite(mDataHeap, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
-	//	}
-	//}
+			if(NULL != dataDepth)
+				fwrite(dataDepth, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
+			else
+				fwrite(mDataHeap, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
+		}
+	}
+#endif
 
 	return dataDepth;
 }

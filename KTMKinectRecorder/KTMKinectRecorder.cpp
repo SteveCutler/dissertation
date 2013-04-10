@@ -5,7 +5,7 @@
 //------------------------------------------------------------------------------
 
 //
-#include "KTMKinectRecorder.h"
+#include "KTMKinectRecorder.hpp"
 
 /// <summary>
 /// Entry point for the application

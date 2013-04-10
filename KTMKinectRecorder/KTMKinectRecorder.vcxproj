@@ -76,11 +76,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ImageRenderer.h" />
-    <ClInclude Include="KTMKinectRecorder.h" />
-    <ClInclude Include="KTMKinectWrapper.h" />
+    <ClInclude Include="ImageRenderer.hpp" />
+    <ClInclude Include="KTMKinectRecorder.hpp" />
+    <ClInclude Include="KTMKinectWrapper.hpp" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Util.h" />
+    <ClInclude Include="Util.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImageRenderer.cpp" />

@@ -1,8 +1,8 @@
 #ifndef KTM_KINECT_WRAPPER_H
 #define KTM_KINECT_WRAPPER_H
 
-#define KTM_USE_OPEN_CV
-// #define KTM_USE_BOOST
+//#define KTM_USE_OPEN_CV
+#define KTM_USE_BOOST
 // #define KTM_USE_STD_FILE
 
 #include <Windows.h>
