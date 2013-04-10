@@ -19,16 +19,12 @@
 #include <boost\iostreams\categories.hpp>
 #include <boost\iostreams\concepts.hpp>
 
+#include "KTMThreadedFileWriter.hpp"
+
 #define FILE_FRAME_SEPERATOR ""
 
 #define DEPTH_FRAME_WIDTH 640
 #define DEPTH_FRAME_HEIGHT 480
-#define RGBA_FRAME_WIDTH 640
-#define RGBA_FRAME_HEIGHT 480
-
-#define OUT_FRAME_WIDTH 640
-#define OUT_FRAME_HEIGHT 720
-#define OUT_FRAME_CHANNELS 4
 
 class KTMKinectWrapper{
 private:
@@ -51,7 +47,7 @@ private:
     INuiSensor* pKinectSensor;
 
 	cv::VideoCapture inVideo;
-	cv::VideoWriter outVideo;
+	
 	IplImage* imgHeap;
 	cv::Mat* matHeap;
 

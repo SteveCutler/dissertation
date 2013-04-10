@@ -14,7 +14,6 @@ KTMKinectWrapper::KTMKinectWrapper() :
 {
 	mDataHeap = new USHORT[iFrameHeight*iFrameWidth];
 	mRGBDataHeap = new char[640*480*4];
-	mOutDataHeap = new unsigned char[OUT_FRAME_WIDTH * OUT_FRAME_HEIGHT * OUT_FRAME_CHANNELS * sizeof(USHORT)];
 	matHeap = new cv::Mat(640,480,CV_16U);
 	imgHeap = cvCreateImage(cvSize(640,480),IPL_DEPTH_16U,1);
 }
@@ -42,10 +41,6 @@ HRESULT KTMKinectWrapper::streamFromKinect(){
 bool KTMKinectWrapper::streamFromFile(char* fPath){
 	if(isConnected())
 		disconnectDevice();
-
-	if(outVideo.isOpened())
-		outVideo.release();
-
 
 	cv::namedWindow("Playback");
 
@@ -76,7 +71,7 @@ bool KTMKinectWrapper::setOutFile(char* fileName, char* c){
 	return NULL != boostOutFile;
 #endif
 #ifdef KTM_USE_STD_FILE
-	//pFile = fopen(fileName, "wb");
+	pFile = fopen(fileName, "wb");
 	return NULL != pFile;
 #endif
 }
