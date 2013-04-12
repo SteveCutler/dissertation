@@ -218,11 +218,6 @@ USHORT* KTMKinectWrapper::getDepthFromFileStream(){
 	}
 	inFile.read((char*)cData, frameSize);
 
-	if(inFile.eof()){
-		inFile.clear();
-		inFile.seekg(0, std::ios_base::beg);
-	}
-
 	memcpy(frameData, cData, frameSize);
 	return frameData;
 }
@@ -241,21 +236,11 @@ char* KTMKinectWrapper::getRGBAFromFileStream(){
 	}
 	inFile.read((char*)cData, frameSize);
 
-	if(inFile.eof()){
-		inFile.clear();
-		inFile.seekg(0, std::ios_base::beg);
-	}
-
 	memcpy(frameData, cData, frameSize);
 	return frameData;
 }
 
 USHORT* KTMKinectWrapper::getDepthFromKinectStream(){
-	/* Check if the next depth frame resulst has been signalled, and if */
-	/* not, return NULL (Don't block)                                   */
-	//if (WAIT_OBJECT_0 != WaitForSingleObject(hNextDepthFrameEvent, 0))
- //       return NULL;
-
     HRESULT hr;
 
 	/* Get the next frame from the Kinect stream */
@@ -308,11 +293,6 @@ USHORT* KTMKinectWrapper::getDepthFromKinectStream(){
 }
 
 char* KTMKinectWrapper::getColorFromKinectStream(){
-	/* Check if the next depth frame resulst has been signalled, and if */
-	/* not, return NULL (Don't block)                                   */
-	if (WAIT_OBJECT_0 != WaitForSingleObject(hNextColorFrameEvent, 0))
-        return NULL;
-
     HRESULT hr;
 
 	/* Get the next frame from the Kinect stream */
