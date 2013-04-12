@@ -45,7 +45,7 @@ public:
     /// <param name="cbImage">size of image data in bytes</param>
     /// <returns>indicates success or failure</returns>
     HRESULT DrawDepth(USHORT* pImage, unsigned long cbImage);
-
+	HRESULT DrawRGB(char* pImage, unsigned long cbImage);
 private:
     HWND                     m_hWnd;
 

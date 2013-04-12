@@ -188,3 +188,47 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
 
     return hr;
 }
+
+
+HRESULT ImageRenderer::DrawRGB(char* pImage, unsigned long cbImage){
+	char* rgbaData = new char[m_sourceWidth * m_sourceHeight * 4];
+	for(unsigned int i = 0; i < cbImage;i++){
+		rgbaData[i] = pImage[i];
+	}
+
+    // create the resources for this draw device
+    // they will be recreated if previously lost
+    HRESULT hr = EnsureResources();
+
+    if ( FAILED(hr) )
+    {
+        return hr;
+    }
+    
+    // Copy the image that was passed in into the direct2d bitmap
+    hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceStride);
+
+	delete[] rgbaData;
+
+    if ( FAILED(hr) )
+    {
+        return hr;
+    }
+       
+    m_pRenderTarget->BeginDraw();
+
+    // Draw the bitmap stretched to the size of the window
+    m_pRenderTarget->DrawBitmap(m_pBitmap);
+            
+    hr = m_pRenderTarget->EndDraw();
+
+    // Device lost, need to recreate the render target
+    // We'll dispose it now and retry drawing
+    if (hr == D2DERR_RECREATE_TARGET)
+    {
+        hr = S_OK;
+        DiscardResources();
+    }
+
+    return hr;
+}

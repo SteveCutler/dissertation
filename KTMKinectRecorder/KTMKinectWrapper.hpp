@@ -1,10 +1,6 @@
 #ifndef KTM_KINECT_WRAPPER_H
 #define KTM_KINECT_WRAPPER_H
 
-//#define KTM_USE_OPEN_CV
-#define KTM_USE_BOOST
-// #define KTM_USE_STD_FILE
-
 #include <Windows.h>
 #include "Util.hpp"
 #include "NuiApi.h"
@@ -19,7 +15,7 @@
 #include <boost\iostreams\categories.hpp>
 #include <boost\iostreams\concepts.hpp>
 
-#include "KTMThreadedFileWriter.hpp"
+#include "ThreadedFileWriter.hpp"
 
 #define FILE_FRAME_SEPERATOR ""
 
@@ -47,6 +43,11 @@ private:
     INuiSensor* pKinectSensor;
 
 	cv::VideoCapture inVideo;
+	std::ifstream inFile;
+	int framesInFile;
+	int framesReadFromFile;
+
+	KTM::ThreadedFileWriter fileWriter;
 	
 	IplImage* imgHeap;
 	cv::Mat* matHeap;
@@ -56,6 +57,7 @@ private:
 
 	/* Private Functions */
 	USHORT* getDepthFromFileStream();
+	char* getRGBAFromFileStream();
 	USHORT* getDepthFromKinectStream();
 	bool getDepthAndColorFromKinectStream(USHORT* depth, char* color);
 	char* getColorFromKinectStream();
@@ -74,11 +76,12 @@ public:
 	void disconnectDevice();
 	bool isConnected();
 	void setNearMode(bool);
-	USHORT* nextFrame();
+	void nextFrame(USHORT* &outDepthData, char* &outRGBData);
 	bool setOutFile(char*);
 	void record(bool);
 	bool setOutFile(char*, char*);
 	bool releaseOutFile();
+	bool releaseInFile();
 	bool streamFromFile(char*);
 	int getFrameWidth(){ return iFrameWidth; };
 	int getFrameHeight(){ return iFrameHeight; };

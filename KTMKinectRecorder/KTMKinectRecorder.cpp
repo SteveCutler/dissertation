@@ -122,11 +122,13 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
 /// </summary>
 void CDepthBasics::Update(){
 	USHORT* depthData = NULL;
+	char* RGBData = NULL;
 	if(NULL != kinect)
-		depthData = kinect->nextFrame();
-	if(NULL != depthData){
-		m_pDrawDepth->DrawDepth(depthData, kinect->getFrameHeight() * kinect->getFrameWidth());
-	}
+		kinect->nextFrame(depthData, RGBData);
+	if(NULL != depthData)
+		m_pDrawDepth->DrawDepth(depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH);
+	if(NULL != RGBData)
+		m_pDrawRGB->DrawRGB(RGBData, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4);
 }
 
 /// <summary>
@@ -187,9 +189,14 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 			HRESULT hr;
 
             m_pDrawDepth = new ImageRenderer();
-			hr = m_pDrawDepth->Initialize(GetDlgItem(m_hWnd, IDC_DEPTH_VIEW), m_pD2DFactory, kinect->getFrameWidth(), kinect->getFrameHeight(), kinect->getFrameWidth() * sizeof(ULONG));
+			m_pDrawRGB = new ImageRenderer();
+			hr = m_pDrawDepth->Initialize(GetDlgItem(m_hWnd, IDC_DEPTH_VIEW), m_pD2DFactory, DEPTH_FRAME_WIDTH, DEPTH_FRAME_HEIGHT, DEPTH_FRAME_WIDTH * sizeof(ULONG));
             if (FAILED(hr))
-                SetStatusMessage(L"Failed to initialize the Direct2D draw device.");
+                SetStatusMessage(L"Failed to initialize the Depth draw device.");
+
+			hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, RGBA_FRAME_WIDTH, RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH * 4 * sizeof(UCHAR));
+            if (FAILED(hr))
+                SetStatusMessage(L"Failed to initialize the RGB draw device.");
         }
         break;
 

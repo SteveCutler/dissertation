@@ -64,6 +64,7 @@ private:
 
     // Direct2D
     ImageRenderer*          m_pDrawDepth;
+	ImageRenderer*			m_pDrawRGB;
     ID2D1Factory*           m_pD2DFactory;
 
     /// <summary>

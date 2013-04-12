@@ -16,6 +16,7 @@ KTMKinectWrapper::KTMKinectWrapper() :
 	mRGBDataHeap = new char[640*480*4];
 	matHeap = new cv::Mat(640,480,CV_16U);
 	imgHeap = cvCreateImage(cvSize(640,480),IPL_DEPTH_16U,1);
+	fileWriter.init();
 }
 
 KTMKinectWrapper::~KTMKinectWrapper(){
@@ -26,12 +27,12 @@ KTMKinectWrapper::~KTMKinectWrapper(){
 
 HRESULT KTMKinectWrapper::streamFromKinect(){
 	HRESULT hr;
-
 	
 	cv::destroyWindow("Playback");
 
 	streamingFromFile = false;
 	inVideo.release();
+	inFile.close();
 
 	hr = connectDevice();
 
@@ -39,16 +40,21 @@ HRESULT KTMKinectWrapper::streamFromKinect(){
 }
 
 bool KTMKinectWrapper::streamFromFile(char* fPath){
-	if(isConnected())
-		disconnectDevice();
+	if(inFile.is_open())
+		releaseInFile();
 
-	cv::namedWindow("Playback");
+	inFile.open(fPath, std::ios::in | std::ios::binary);
+	
+	streamingFromFile = inFile.is_open();
 
-	inVideo.open(fPath);
-	double t = inVideo.get(CV_CAP_PROP_FOURCC);
+	long start = inFile.tellg();
+	inFile.seekg(0, std::ios_base::end);
+	long end = inFile.tellg();
 
-	streamingFromFile = inVideo.isOpened();
-
+	long size = end - start;
+	float frames = (float)size / (float)(iFrameHeight *iFrameWidth * sizeof(unsigned short));
+	inFile.clear();
+	inFile.seekg(0, std::ios_base::beg);
 	return streamingFromFile;
 }
 
@@ -58,53 +64,22 @@ bool KTMKinectWrapper::setOutFile(char* fileName){
 }
 
 bool KTMKinectWrapper::setOutFile(char* fileName, char* c){
-#ifdef KTM_USE_OPEN_CV
-	/* If no codec is specified prompt the user for a codec */
-	if(NULL != c)
-		outVideo.open(fileName, CV_FOURCC(c[0],c[1],c[2],c[3]), 25, cv::Size(OUT_FRAME_WIDTH, OUT_FRAME_HEIGHT), true);
-	else
-		outVideo.open(fileName, -1, 30, cv::Size(OUT_FRAME_WIDTH, OUT_FRAME_HEIGHT), true);
-	return outVideo.isOpened();
-#endif
-#ifdef KTM_USE_BOOST
-	boostOutFile = new boost::iostreams::basic_file_sink<char>(fileName, std::ios_base::binary);
-	return NULL != boostOutFile;
-#endif
-#ifdef KTM_USE_STD_FILE
-	pFile = fopen(fileName, "wb");
-	return NULL != pFile;
-#endif
+	return fileWriter.setOutFile(fileName);
 }
 
 void KTMKinectWrapper::record(bool r){
-#ifdef KTM_USE_OPEN_CV
-	if(r)
-		cv::namedWindow("Recording - Combined");
-	else
-		cv::destroyWindow("Recording - Combined");
-#endif
 	recordEnable = r;
 }
 
 bool KTMKinectWrapper::releaseOutFile(){
-#ifdef KTM_USE_OPEN_CV
-	if(outVideo.isOpened())
-		outVideo.release();
-#endif
-#ifdef KTM_USE_BOOST
-	if(NULL != boostOutFile){
-		boostOutFile->flush();
-		boostOutFile->close();
-		boostOutFile = NULL;
-	}
-#endif
-#ifdef KTM_USE_STD_FILE
-	if(NULL != pFile){
-		fclose(pFile);
-		pFile = NULL;
-	}
-#endif
+	fileWriter.releaseOutFile();
 	return true;
+}
+
+bool KTMKinectWrapper::releaseInFile(){
+	if(inFile.is_open())
+		inFile.close();
+	return !inFile.is_open();
 }
 
 HRESULT KTMKinectWrapper::connectDevice(){
@@ -195,94 +170,81 @@ void KTMKinectWrapper::setNearMode(bool t){
 		pKinectSensor->NuiImageStreamSetImageFrameFlags(hDepthStreamHandle, t ? NUI_IMAGE_STREAM_FLAG_ENABLE_NEAR_MODE : 0);
 }
 
-USHORT* KTMKinectWrapper::nextFrame(){
-	USHORT* dataDepth = NULL;
+void KTMKinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
+	USHORT* depthData = NULL;
 	char* RGBdata = NULL;
 
 	if(streamingFromFile){
-		dataDepth = this->getDepthFromFileStream();
+		depthData = this->getDepthFromFileStream();
+		RGBdata = this->getRGBAFromFileStream();
 	}else{
+		if(NULL == pKinectSensor)
+			return;
+
+		WaitForSingleObject(hNextDepthFrameEvent, 1000);
 		RGBdata = this->getColorFromKinectStream();
-		dataDepth = this->getDepthFromKinectStream();
+
+		WaitForSingleObject(hNextColorFrameEvent, 1000);
+		depthData = this->getDepthFromKinectStream();
 	}
 
-#ifdef KTM_USE_OPEN_CV	
-	cv::Mat matCombined = cv::Mat::zeros(RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH, CV_8UC4);
-	cv::Mat matRGBA = cv::Mat::zeros(RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH, CV_8UC4);
-	if(NULL != RGBdata){
-		matRGBA.data = (unsigned char*)RGBdata;
+	if(recordEnable){
+		if(NULL != depthData)
+			fileWriter.write((char*)depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+		else
+			fileWriter.write((char*)mDataHeap, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+
+		if(NULL != RGBdata)
+			fileWriter.write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char));
+		else
+			fileWriter.write(mRGBDataHeap, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char));
 	}
-	matCombined = matRGBA.clone();
 
-	cv::Mat matDepth = cv::Mat::zeros(DEPTH_FRAME_HEIGHT / 2, DEPTH_FRAME_WIDTH, CV_8UC4);
-	if(NULL != dataDepth){
-		int dataSize = iFrameHeight * iFrameWidth * sizeof(USHORT);
-		memcpy(matDepth.data, dataDepth, dataSize);
-	}
-	matCombined.push_back(matDepth);
-
-	if(outVideo.isOpened() && !streamingFromFile && recordEnable){
-		cv::imshow("Recording - Combined", matCombined);
-		outVideo.write(matCombined);
-	}
-#endif
-#ifdef KTM_USE_BOOST
-	if(NULL != boostOutFile){
-		if(boostOutFile->is_open() || !streamingFromFile && recordEnable){
-			//if(NULL != RGBdata)
-			//	boostOutFile->write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
-			//else
-			//	boostOutFile->write(mRGBDataHeap, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS);
-
-			if(NULL != dataDepth)
-				boostOutFile->write((char*)dataDepth, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
-			else
-				boostOutFile->write((char*)mDataHeap, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
-
-			boostOutFile->flush();
-		}
-	}
-#endif
-#ifdef KTM_USE_STD_FILE
-	if(NULL != pFile){
-		if(!streamingFromFile && recordEnable){
-			if(NULL != RGBdata)
-				fwrite(RGBdata, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
-			else
-				fwrite(mRGBDataHeap, sizeof(char), RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS, pFile);
-
-			if(NULL != dataDepth)
-				fwrite(dataDepth, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
-			else
-				fwrite(mDataHeap, sizeof(USHORT), DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH, pFile);
-		}
-	}
-#endif
-
-	return dataDepth;
+	outDepthData = depthData;
+	outRGBData = RGBdata;
 }
 
 USHORT* KTMKinectWrapper::getDepthFromFileStream(){
 	USHORT* frameData = mDataHeap;
+	int frameSize = iFrameWidth * iFrameHeight * sizeof(unsigned short);
+	if(!inFile.is_open())
+		return NULL;
 
-	cv::Mat m(OUT_FRAME_HEIGHT, OUT_FRAME_WIDTH, CV_8UC4);
-	int mdataSize = m.dataend - m.datastart;
+	USHORT* cData = mDataHeap;
 
-	int t1= m.type();
-
-	bool b = inVideo.set(CV_CAP_PROP_FORMAT, 1);
-
-	inVideo.grab();
-	if(!inVideo.retrieve(m, 3)){
-		inVideo.set(CV_CAP_PROP_POS_FRAMES, 0);
-		inVideo.grab();
-		inVideo.retrieve(m, 3);
+	if(inFile.eof()){
+		inFile.clear();
+		inFile.seekg(0, std::ios_base::beg);
 	}
-	
-	cv::imshow("Playback", m);
+	inFile.read((char*)cData, frameSize);
 
-	int frameSize = iFrameWidth * iFrameHeight * sizeof(USHORT);
-	unsigned char* cData = m.data;
+	if(inFile.eof()){
+		inFile.clear();
+		inFile.seekg(0, std::ios_base::beg);
+	}
+
+	memcpy(frameData, cData, frameSize);
+	return frameData;
+}
+
+char* KTMKinectWrapper::getRGBAFromFileStream(){
+	char* frameData = mRGBDataHeap;
+	int frameSize = RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char);
+	if(!inFile.is_open())
+		return NULL;
+
+	char* cData = mRGBDataHeap;
+
+	if(inFile.eof()){
+		inFile.clear();
+		inFile.seekg(0, std::ios_base::beg);
+	}
+	inFile.read((char*)cData, frameSize);
+
+	if(inFile.eof()){
+		inFile.clear();
+		inFile.seekg(0, std::ios_base::beg);
+	}
 
 	memcpy(frameData, cData, frameSize);
 	return frameData;
@@ -291,8 +253,8 @@ USHORT* KTMKinectWrapper::getDepthFromFileStream(){
 USHORT* KTMKinectWrapper::getDepthFromKinectStream(){
 	/* Check if the next depth frame resulst has been signalled, and if */
 	/* not, return NULL (Don't block)                                   */
-	if (WAIT_OBJECT_0 != WaitForSingleObject(hNextDepthFrameEvent, 0))
-        return NULL;
+	//if (WAIT_OBJECT_0 != WaitForSingleObject(hNextDepthFrameEvent, 0))
+ //       return NULL;
 
     HRESULT hr;
 
