@@ -177,6 +177,11 @@ void KTMKinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	if(streamingFromFile){
 		depthData = this->getDepthFromFileStream();
 		RGBdata = this->getRGBAFromFileStream();
+
+		if(inFile.eof()){
+			inFile.clear();
+			inFile.seekg(0, std::ios_base::beg);
+		}
 	}else{
 		if(NULL == pKinectSensor)
 			return;
@@ -212,10 +217,6 @@ USHORT* KTMKinectWrapper::getDepthFromFileStream(){
 
 	USHORT* cData = mDataHeap;
 
-	if(inFile.eof()){
-		inFile.clear();
-		inFile.seekg(0, std::ios_base::beg);
-	}
 	inFile.read((char*)cData, frameSize);
 
 	memcpy(frameData, cData, frameSize);
@@ -230,10 +231,7 @@ char* KTMKinectWrapper::getRGBAFromFileStream(){
 
 	char* cData = mRGBDataHeap;
 
-	if(inFile.eof()){
-		inFile.clear();
-		inFile.seekg(0, std::ios_base::beg);
-	}
+	
 	inFile.read((char*)cData, frameSize);
 
 	memcpy(frameData, cData, frameSize);
