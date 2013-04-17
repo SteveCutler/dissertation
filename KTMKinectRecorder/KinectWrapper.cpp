@@ -9,6 +9,7 @@ KTM::KinectWrapper::KinectWrapper() :
 	hNextDepthFrameEvent(NULL),
 	hNextColorFrameEvent(NULL),
 	recordEnable(false),
+	outFileReady(false),
 	boostOutFile(NULL),
 	pFile(NULL),
 	recordStartTime(0)
@@ -58,7 +59,7 @@ bool KTM::KinectWrapper::streamFromFile(char* fPath){
 	float frames = (float)size / (float)(iFrameHeight *iFrameWidth * sizeof(unsigned short));
 	inFile.clear();
 	inFile.seekg(0, std::ios_base::beg);
-	playbackTime = 0;
+	playbackStartTime = timeGetTime();
 	return streamingFromFile;
 }
 
@@ -68,7 +69,12 @@ bool KTM::KinectWrapper::setOutFile(char* fileName){
 }
 
 bool KTM::KinectWrapper::setOutFile(char* fileName, char* c){
-	return fileWriter.setOutFile(fileName);
+	outFileReady = fileWriter.setOutFile(fileName);
+	return outFileReady;
+}
+
+bool KTM::KinectWrapper::hasOutFile(){
+	return outFileReady;
 }
 
 void KTM::KinectWrapper::record(bool r){
@@ -181,17 +187,20 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	char* RGBdata = NULL;
 
 	if(streamingFromFile){
+		
 		long frameTime = 0;
 		depthData = this->getDepthFromFileStream(frameTime);
 		RGBdata = this->getRGBAFromFileStream(frameTime);
 
-		Sleep(frameTime - playbackTime);
-		playbackTime = frameTime;
+		long currentTime = timeGetTime();
+		long timeSincePlaybackStart = currentTime - playbackStartTime;
+		if(timeSincePlaybackStart < frameTime)
+			Sleep(frameTime - timeSincePlaybackStart);
 
 		if(inFile.eof()){
 			inFile.clear();
 			inFile.seekg(0, std::ios_base::beg);
-			playbackTime = 0;
+			playbackLastTime = timeGetTime();
 		}
 	}else{
 		if(NULL == pKinectSensor)

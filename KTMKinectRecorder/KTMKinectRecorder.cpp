@@ -233,10 +233,45 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 					SetStatusMessage(L"Near mode disabled...");
             }
 
+            if (ID_MENU_FILE_OPEN == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
+				SetStatusMessage(L"Disconnecting Kinect...");
+				kinect->disconnectDevice();
+				std::string fp = getFilePath();
+				SetStatusMessage(L"Setting up file stream...");
+				if(kinect->streamFromFile((char*)fp.c_str()) && !fp.empty()){
+					SetStatusMessage(L"Streaming from file...");
+				}else{
+					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
+					SetStatusMessage(L"Could not stream from file...");
+				}
+            }
+
+            if (ID_MENU_FILE_SETRECORDFILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				std::string fp = getFilePath();
+				if(kinect->setOutFile((char*)fp.c_str())){
+					if(kinect->isConnected())
+						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					else
+						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+				}else{
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					SetStatusMessage(L"Could not open stream for writing...");
+				}
+            }
+
 			if(IDC_BUTTON_KINECT == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				SetStatusMessage(L"Connecting to device...");
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), FALSE);
-				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 
 				if(FAILED(kinect->streamFromKinect())){
 					SetStatusMessage(L"Could not connect to device...");
@@ -247,7 +282,10 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 				}else{
 					SetStatusMessage(L"Streaming from Kinect...");
 					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					if(kinect->hasOutFile())
+						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					else
+						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 				}
 			}
@@ -255,17 +293,10 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 			if(IDC_BUTTON_RECORD_START == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				SetStatusMessage(L"Starting record...");
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
-				if(kinect->setOutFile("output/out.avi", "DIB ")){
-					kinect->record(true);
-					SetStatusMessage(L"Recording...");
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), TRUE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
-				}else{
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
-					SetStatusMessage(L"Could not open stream for writing...");
-				}
+				kinect->record(true);
+				SetStatusMessage(L"Recording...");
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), TRUE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
 			}
 
 			if(IDC_BUTTON_RECORD_STOP == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
@@ -275,26 +306,6 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
-			}
-
-			if(IDC_BUTTON_FILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
-				EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
-				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
-				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
-				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
-				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
-				SetStatusMessage(L"Disconnecting Kinect...");
-				kinect->disconnectDevice();
-				SetStatusMessage(L"Setting up file stream...");
-				if(kinect->streamFromFile("output/out.avi")){
-					SetStatusMessage(L"Streaming from file...");
-				}else{
-					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
-					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
-					SetStatusMessage(L"Could not stream from file...");
-				}
 			}
             break;
     }
@@ -310,4 +321,30 @@ void CDepthBasics::SetStatusMessage(WCHAR * szMessage)
 {
     //SendDlgItemMessageW(m_hWnd, IDC_STATUS, WM_SETTEXT, 0, (LPARAM)szMessage);
 	KTM::NotificationInterface::setMessage(szMessage);
+}
+
+std::string CDepthBasics::getFilePath(){
+	OPENFILENAME ofn;
+	wchar_t fileName[MAX_PATH];
+	char fileNameC[MAX_PATH] = "";
+	ZeroMemory(fileName, MAX_PATH * sizeof(wchar_t));
+	ZeroMemory(&ofn, sizeof(ofn));
+
+	ofn.lStructSize = sizeof(OPENFILENAME);
+	ofn.hwndOwner = m_hWnd;
+	ofn.lpstrFilter = L"All Files (*.*)\0*.*\0";
+	ofn.lpstrFile = (LPTSTR)fileName;
+	ofn.nMaxFile = MAX_PATH;
+	ofn.Flags = OFN_EXPLORER;
+	ofn.lpstrDefExt = L"";
+
+	std::string fileNameStr;
+
+	if (!GetOpenFileName(&ofn))
+		return "";
+
+	wcstombs(fileNameC, fileName, MAX_PATH);
+	fileNameStr = fileNameC;
+
+	return fileNameStr;
 }

@@ -2,12 +2,11 @@
 #define KTM_KINECT_RECORDER_H
 
 #include <Windows.h>
+#include <stdlib.h>
 #include "KinectWrapper.hpp"
 #include "NuiApi.h"
 #include "resource.h"
 #include "ImageRenderer.hpp"
-
-
 
 //#include <Shlobj.h>
 
@@ -76,6 +75,7 @@ private:
     /// </summary>
     /// <param name="szMessage">message to display</param>
     void                    SetStatusMessage(WCHAR* szMessage);
+	std::string				getFilePath();
 };
 
 #endif

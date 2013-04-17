@@ -29,6 +29,7 @@ namespace KTM{
 	class KinectWrapper{
 	private:
 		bool outputToFile;
+		bool outFileReady;
 		bool recordEnable;
 		bool streamingFromFile;
 		char* filePath;
@@ -37,7 +38,8 @@ namespace KTM{
 		char* mTypeHeap;
 		unsigned char* mOutDataHeap;
 		long recordStartTime;
-		long playbackTime;
+		long playbackStartTime;
+		long playbackLastTime;
 		long timeSinceStart;
 
 		int iFrameWidth;
@@ -86,6 +88,7 @@ namespace KTM{
 		void setNearMode(bool);
 		void nextFrame(USHORT* &outDepthData, char* &outRGBData);
 		bool setOutFile(char*);
+		bool hasOutFile();
 		void record(bool);
 		bool setOutFile(char*, char*);
 		bool releaseOutFile();
