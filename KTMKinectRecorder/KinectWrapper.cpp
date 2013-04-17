@@ -1,6 +1,6 @@
-#include "KTMKinectWrapper.hpp"
+#include "KinectWrapper.hpp"
 
-KTMKinectWrapper::KTMKinectWrapper() :
+KTM::KinectWrapper::KinectWrapper() :
 	pKinectSensor(NULL),
 	iFrameWidth(640),
 	iFrameHeight(480),
@@ -19,13 +19,13 @@ KTMKinectWrapper::KTMKinectWrapper() :
 	fileWriter.init();
 }
 
-KTMKinectWrapper::~KTMKinectWrapper(){
+KTM::KinectWrapper::~KinectWrapper(){
 	disconnectDevice();
 
     delete[] mDataHeap;
 }
 
-HRESULT KTMKinectWrapper::streamFromKinect(){
+HRESULT KTM::KinectWrapper::streamFromKinect(){
 	HRESULT hr;
 	
 	cv::destroyWindow("Playback");
@@ -39,7 +39,7 @@ HRESULT KTMKinectWrapper::streamFromKinect(){
 	return hr;
 }
 
-bool KTMKinectWrapper::streamFromFile(char* fPath){
+bool KTM::KinectWrapper::streamFromFile(char* fPath){
 	if(inFile.is_open())
 		releaseInFile();
 
@@ -58,31 +58,31 @@ bool KTMKinectWrapper::streamFromFile(char* fPath){
 	return streamingFromFile;
 }
 
-bool KTMKinectWrapper::setOutFile(char* fileName){
+bool KTM::KinectWrapper::setOutFile(char* fileName){
 	/* Prompt the user for a choice of codec */
 	return setOutFile(fileName, NULL);
 }
 
-bool KTMKinectWrapper::setOutFile(char* fileName, char* c){
+bool KTM::KinectWrapper::setOutFile(char* fileName, char* c){
 	return fileWriter.setOutFile(fileName);
 }
 
-void KTMKinectWrapper::record(bool r){
+void KTM::KinectWrapper::record(bool r){
 	recordEnable = r;
 }
 
-bool KTMKinectWrapper::releaseOutFile(){
+bool KTM::KinectWrapper::releaseOutFile(){
 	fileWriter.releaseOutFile();
 	return true;
 }
 
-bool KTMKinectWrapper::releaseInFile(){
+bool KTM::KinectWrapper::releaseInFile(){
 	if(inFile.is_open())
 		inFile.close();
 	return !inFile.is_open();
 }
 
-HRESULT KTMKinectWrapper::connectDevice(){
+HRESULT KTM::KinectWrapper::connectDevice(){
     INuiSensor * pTmpKinectSensor;
     HRESULT hr;
 
@@ -146,7 +146,7 @@ HRESULT KTMKinectWrapper::connectDevice(){
     return hr;
 }
 
-void KTMKinectWrapper::disconnectDevice(){
+void KTM::KinectWrapper::disconnectDevice(){
 	/* Shutdown the Kinect, if active */
 	if (pKinectSensor){
 		pKinectSensor->NuiShutdown();
@@ -159,18 +159,18 @@ void KTMKinectWrapper::disconnectDevice(){
 			CloseHandle(hNextDepthFrameEvent);
 }
 
-bool KTMKinectWrapper::isConnected(){
+bool KTM::KinectWrapper::isConnected(){
 	if(pKinectSensor)
 		return true;
 	return false;
 }
 
-void KTMKinectWrapper::setNearMode(bool t){
+void KTM::KinectWrapper::setNearMode(bool t){
 	if (NULL != pKinectSensor)
 		pKinectSensor->NuiImageStreamSetImageFrameFlags(hDepthStreamHandle, t ? NUI_IMAGE_STREAM_FLAG_ENABLE_NEAR_MODE : 0);
 }
 
-void KTMKinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
+void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	USHORT* depthData = NULL;
 	char* RGBdata = NULL;
 
@@ -209,7 +209,7 @@ void KTMKinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	outRGBData = RGBdata;
 }
 
-USHORT* KTMKinectWrapper::getDepthFromFileStream(){
+USHORT* KTM::KinectWrapper::getDepthFromFileStream(){
 	USHORT* frameData = mDataHeap;
 	int frameSize = iFrameWidth * iFrameHeight * sizeof(unsigned short);
 	if(!inFile.is_open())
@@ -223,7 +223,7 @@ USHORT* KTMKinectWrapper::getDepthFromFileStream(){
 	return frameData;
 }
 
-char* KTMKinectWrapper::getRGBAFromFileStream(){
+char* KTM::KinectWrapper::getRGBAFromFileStream(){
 	char* frameData = mRGBDataHeap;
 	int frameSize = RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char);
 	if(!inFile.is_open())
@@ -238,7 +238,7 @@ char* KTMKinectWrapper::getRGBAFromFileStream(){
 	return frameData;
 }
 
-USHORT* KTMKinectWrapper::getDepthFromKinectStream(){
+USHORT* KTM::KinectWrapper::getDepthFromKinectStream(){
     HRESULT hr;
 
 	/* Get the next frame from the Kinect stream */
@@ -290,7 +290,7 @@ USHORT* KTMKinectWrapper::getDepthFromKinectStream(){
 	return mDataHeap;
 }
 
-char* KTMKinectWrapper::getColorFromKinectStream(){
+char* KTM::KinectWrapper::getColorFromKinectStream(){
     HRESULT hr;
 
 	/* Get the next frame from the Kinect stream */

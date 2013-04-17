@@ -29,7 +29,7 @@ CDepthBasics::CDepthBasics() :
     m_pD2DFactory(NULL)//,
 //    m_pDrawDepth(NULL)
 {
-	kinect = new KTMKinectWrapper();
+	kinect = new KTM::KinectWrapper();
 }
 
 /// <summary>

@@ -2,7 +2,7 @@
 #define KTM_KINECT_RECORDER_H
 
 #include <Windows.h>
-#include "KTMKinectWrapper.hpp"
+#include "KinectWrapper.hpp"
 //#include "stdafx.h"
 #include "NuiApi.h"
 #include "resource.h"
@@ -19,7 +19,7 @@
 
 class CDepthBasics{
     static const int        cStatusMessageMaxLen = MAX_PATH*2;
-	KTMKinectWrapper*		kinect;
+	KTM::KinectWrapper*		kinect;
 
 public:
     /// <summary>
