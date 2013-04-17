@@ -197,6 +197,10 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 			hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, RGBA_FRAME_WIDTH, RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH * 4 * sizeof(UCHAR));
             if (FAILED(hr))
                 SetStatusMessage(L"Failed to initialize the RGB draw device.");
+
+			EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
+			EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+			EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
         }
         break;
 
@@ -227,19 +231,35 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 
 			if(IDC_BUTTON_KINECT == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				SetStatusMessage(L"Connecting to device...");
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 
-				if(FAILED(kinect->streamFromKinect()))
+				if(FAILED(kinect->streamFromKinect())){
 					SetStatusMessage(L"Could not connect to device...");
-				else
+					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
+				}else{
 					SetStatusMessage(L"Streaming from Kinect...");
+					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+				}
 			}
 
 			if(IDC_BUTTON_RECORD_START == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				SetStatusMessage(L"Starting record...");
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 				if(kinect->setOutFile("output/out.avi", "DIB ")){
 					kinect->record(true);
 					SetStatusMessage(L"Recording...");
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
 				}else{
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 					SetStatusMessage(L"Could not open stream for writing...");
 				}
 			}
@@ -248,17 +268,29 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 				SetStatusMessage(L"Recording stopped...");
 				kinect->record(false);
 				kinect->releaseOutFile();
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 			}
 
 			if(IDC_BUTTON_FILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
+				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
 				SetStatusMessage(L"Disconnecting Kinect...");
 				kinect->disconnectDevice();
 				SetStatusMessage(L"Setting up file stream...");
-				if(kinect->streamFromFile("output/out.avi"))
+				if(kinect->streamFromFile("output/out.avi")){
 					SetStatusMessage(L"Streaming from file...");
-				else
+				}else{
+					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 					SetStatusMessage(L"Could not stream from file...");
+				}
 			}
             break;
     }
