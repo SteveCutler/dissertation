@@ -10,10 +10,13 @@ KTM::KinectWrapper::KinectWrapper() :
 	hNextColorFrameEvent(NULL),
 	recordEnable(false),
 	boostOutFile(NULL),
-	pFile(NULL)
+	pFile(NULL),
+	recordStartTime(0)
 {
 	mDataHeap = new USHORT[iFrameHeight*iFrameWidth];
 	mRGBDataHeap = new char[640*480*4];
+	mTypeHeap = new char[5];
+	memset(mTypeHeap,0,5);
 	matHeap = new cv::Mat(640,480,CV_16U);
 	imgHeap = cvCreateImage(cvSize(640,480),IPL_DEPTH_16U,1);
 	fileWriter.init();
@@ -55,6 +58,7 @@ bool KTM::KinectWrapper::streamFromFile(char* fPath){
 	float frames = (float)size / (float)(iFrameHeight *iFrameWidth * sizeof(unsigned short));
 	inFile.clear();
 	inFile.seekg(0, std::ios_base::beg);
+	playbackTime = 0;
 	return streamingFromFile;
 }
 
@@ -69,6 +73,10 @@ bool KTM::KinectWrapper::setOutFile(char* fileName, char* c){
 
 void KTM::KinectWrapper::record(bool r){
 	recordEnable = r;
+	if(recordEnable)
+		recordStartTime = timeGetTime();
+	else
+		recordStartTime = 0;
 }
 
 bool KTM::KinectWrapper::releaseOutFile(){
@@ -173,12 +181,17 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	char* RGBdata = NULL;
 
 	if(streamingFromFile){
-		depthData = this->getDepthFromFileStream();
-		RGBdata = this->getRGBAFromFileStream();
+		long frameTime = 0;
+		depthData = this->getDepthFromFileStream(frameTime);
+		RGBdata = this->getRGBAFromFileStream(frameTime);
+
+		Sleep(frameTime - playbackTime);
+		playbackTime = frameTime;
 
 		if(inFile.eof()){
 			inFile.clear();
 			inFile.seekg(0, std::ios_base::beg);
+			playbackTime = 0;
 		}
 	}else{
 		if(NULL == pKinectSensor)
@@ -192,23 +205,44 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	}
 
 	if(recordEnable){
-		if(NULL != depthData)
-			fileWriter.write((char*)depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
-		else
-			fileWriter.write((char*)mDataHeap, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+		long currentTime = timeGetTime();
+		timeSinceStart = currentTime - recordStartTime;
 
-		if(NULL != RGBdata)
+		if(NULL != depthData){
+			fileWriter.write("DEPTH", 5 * sizeof(char));
+			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
+			fileWriter.write((char*)depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+		}
+
+		if(NULL != RGBdata){
+			fileWriter.write("RGB  ", 5);
+			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
 			fileWriter.write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char));
-		else
-			fileWriter.write(mRGBDataHeap, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char));
+		}
 	}
 
 	outDepthData = depthData;
 	outRGBData = RGBdata;
 }
 
-USHORT* KTM::KinectWrapper::getDepthFromFileStream(){
+USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
 	USHORT* frameData = mDataHeap;
+
+	char* type = new char[6];
+	inFile.read(type, 5);
+	type[5] = '\0';
+	if(strcmp(type, "DEPTH") != 0){
+		inFile.seekg(-5, 0);
+		delete type;
+		return NULL;
+	}
+	delete type;
+
+	long* t = new long[1];
+	inFile.read((char*)t, sizeof(long));
+	frameTime = t[0];
+	delete t;
+
 	int frameSize = iFrameWidth * iFrameHeight * sizeof(unsigned short);
 	if(!inFile.is_open())
 		return NULL;
@@ -221,7 +255,22 @@ USHORT* KTM::KinectWrapper::getDepthFromFileStream(){
 	return frameData;
 }
 
-char* KTM::KinectWrapper::getRGBAFromFileStream(){
+char* KTM::KinectWrapper::getRGBAFromFileStream(long &frameTime){
+	char* type = new char[6];
+	inFile.read(type, 5);
+	type[5] = '\0';
+	if(strcmp(type, "RGB  ") != 0){
+		inFile.seekg(-5, 0);
+		delete type;
+		return NULL;
+	}
+	delete type;
+
+	long* t = new long[1];
+	inFile.read((char*)t, sizeof(long));
+	frameTime = t[0];
+	delete t;
+
 	char* frameData = mRGBDataHeap;
 	int frameSize = RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char);
 	if(!inFile.is_open())

@@ -1,7 +1,9 @@
 #ifndef KTM_KINECT_WRAPPER_H
 #define KTM_KINECT_WRAPPER_H
 
-#include <Windows.h>
+
+#include <windows.h>
+#include <mmsystem.h>
 #include "Util.hpp"
 #include "NuiApi.h"
 #include <iostream>
@@ -32,7 +34,11 @@ namespace KTM{
 		char* filePath;
 		USHORT* mDataHeap;
 		char* mRGBDataHeap;
+		char* mTypeHeap;
 		unsigned char* mOutDataHeap;
+		long recordStartTime;
+		long playbackTime;
+		long timeSinceStart;
 
 		int iFrameWidth;
 		int iFrameHeight;
@@ -58,8 +64,8 @@ namespace KTM{
 		FILE* pFile;
 
 		/* Private Functions */
-		USHORT* getDepthFromFileStream();
-		char* getRGBAFromFileStream();
+		USHORT* getDepthFromFileStream(long &frameTime);
+		char* getRGBAFromFileStream(long &frameTime);
 		USHORT* getDepthFromKinectStream();
 		bool getDepthAndColorFromKinectStream(USHORT* depth, char* color);
 		char* getColorFromKinectStream();
