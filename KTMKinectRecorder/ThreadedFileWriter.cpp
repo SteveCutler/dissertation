@@ -9,8 +9,6 @@ bool KTM::ThreadedFileWriter::init(){
 bool KTM::ThreadedFileWriter::write(char* data, long size){
 	KTM::DataToWrite entry;
 	entry.data = data;
-//	entry.data = new char[size];
-//	memcpy(entry.data, data, size);
 	entry.size = size;
 	pthread_mutex_lock(&dataQueueMutex);
 	dataQueue.push(entry);
@@ -41,47 +39,6 @@ void* KTM::ThreadedFileWriter::writeProcessStarter(void* context){
 	return ((KTM::ThreadedFileWriter*)context)->writeProcess(NULL);
 }
 
-#ifdef KTM_USE_CV
-bool KTM::ThreadedFileWriter::setOutFile(char* filePath){
-	pthread_mutex_lock(&outFileMutex);
-	outFile.open(filePath, CV_FOURCC('D','I','B',' '), 25, cv::Size(OUT_FRAME_WIDTH, OUT_FRAME_HEIGHT), true);
-	pthread_mutex_unlock(&outFileMutex);
-	return outFile.isOpened() && startWriteProcess();
-}
-
-bool KTM::ThreadedFileWriter::releaseOutFile(){
-	pthread_mutex_lock(&outFileMutex);
-	if(cvOutFile.isOpened())
-		cvOutFile.release();
-	pthread_mutex_unlock(&outFileMutex);
-	return !outFile.isOpened();
-}
-
-void* KTM::ThreadedFileWriter::writeProcess(void* threadArgs){
-	writeProcessActive = true;
-	
-	while(writeProcessActive){
-		pthread_mutex_lock(&dataQueueMutex);
-		if(dataQueue.empty()){
-			pthread_mutex_unlock(&dataQueueMutex);
-			continue;
-		}
-
-		char* data = dataQueue.front();
-		dataQueue.pop();
-		pthread_mutex_unlock(&dataQueueMutex);
-
-		cv::Mat imageMat = cv::Mat::zeros(OUT_FRAME_HEIGHT, OUT_FRAME_WIDTH, CV_8UC4);
-		pthread_mutex_lock(&outFileMutex);
-		cvOutFile.write(imageMat);
-		pthread_mutex_unlock(&outFileMutex);
-	}
-
-	return NULL;
-}
-#endif
-
-#ifdef KTM_USE_BOOST
 bool KTM::ThreadedFileWriter::setOutFile(char* filePath){
 	pthread_mutex_lock(&outFileMutex);
 	outFile = new boost::iostreams::basic_file_sink<char>(filePath, std::ios_base::binary);
@@ -156,4 +113,3 @@ void* KTM::ThreadedFileWriter::writeProcess(void* threadArgs){
 
 	return NULL;
 }
-#endif

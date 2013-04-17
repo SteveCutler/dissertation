@@ -11,8 +11,6 @@
 #include <sstream>
 #include <vector>
 #include <stdio.h>
-#include <opencv\cv.h>
-#include <opencv\highgui.h>
 #include <boost\iostreams\device\file.hpp>
 #include <boost\iostreams\categories.hpp>
 #include <boost\iostreams\concepts.hpp>
@@ -28,23 +26,18 @@ namespace KTM{
 
 	class KinectWrapper{
 	private:
-		bool outputToFile;
 		bool outFileReady;
 		bool recordEnable;
 		bool streamingFromFile;
-		char* filePath;
-		USHORT* mDataHeap;
+		USHORT* mDepthDataHeap;
 		char* mRGBDataHeap;
-		char* mTypeHeap;
-		unsigned char* mOutDataHeap;
 		long recordStartTime;
 		long playbackStartTime;
 		long playbackLastTime;
 		long timeSinceStart;
 
-		int iFrameWidth;
-		int iFrameHeight;
-		int iBytesPerPixel;
+		int depthFrameWidth;
+		int depthFrameHeight;
 
 		HANDLE hDepthStreamHandle;
 		HANDLE hNextDepthFrameEvent;
@@ -52,18 +45,9 @@ namespace KTM{
 		HANDLE hNextColorFrameEvent;
 		INuiSensor* pKinectSensor;
 
-		cv::VideoCapture inVideo;
 		std::ifstream inFile;
-		int framesInFile;
-		int framesReadFromFile;
 
 		KTM::ThreadedFileWriter fileWriter;
-	
-		IplImage* imgHeap;
-		cv::Mat* matHeap;
-
-		boost::iostreams::basic_file_sink<char>* boostOutFile;
-		FILE* pFile;
 
 		/* Private Functions */
 		USHORT* getDepthFromFileStream(long &frameTime);
@@ -72,11 +56,6 @@ namespace KTM{
 		bool getDepthAndColorFromKinectStream(USHORT* depth, char* color);
 		char* getColorFromKinectStream();
 
-		/* Different File Output Methods */
-		int writeMethod;
-		bool writeCV(char*, USHORT*);
-		bool writeSTDFile(char*, USHORT*);
-		bool writeBoost(char*, USHORT*);
 	public:
 		KinectWrapper();
 		~KinectWrapper();
@@ -94,11 +73,8 @@ namespace KTM{
 		bool releaseOutFile();
 		bool releaseInFile();
 		bool streamFromFile(char*);
-		int getFrameWidth(){ return iFrameWidth; };
-		int getFrameHeight(){ return iFrameHeight; };
-
-		/* Different Writing Methods */
-		void setWriteMethod(int);
+		int getFrameWidth(){ return depthFrameWidth; };
+		int getFrameHeight(){ return depthFrameHeight; };
 	};
 };
 #endif

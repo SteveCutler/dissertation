@@ -2,40 +2,30 @@
 
 KTM::KinectWrapper::KinectWrapper() :
 	pKinectSensor(NULL),
-	iFrameWidth(640),
-	iFrameHeight(480),
-	iBytesPerPixel(1),
+	depthFrameWidth(640),
+	depthFrameHeight(480),
 	streamingFromFile(false),
 	hNextDepthFrameEvent(NULL),
 	hNextColorFrameEvent(NULL),
 	recordEnable(false),
 	outFileReady(false),
-	boostOutFile(NULL),
-	pFile(NULL),
 	recordStartTime(0)
 {
-	mDataHeap = new USHORT[iFrameHeight*iFrameWidth];
+	mDepthDataHeap = new USHORT[depthFrameHeight*depthFrameWidth];
 	mRGBDataHeap = new char[640*480*4];
-	mTypeHeap = new char[5];
-	memset(mTypeHeap,0,5);
-	matHeap = new cv::Mat(640,480,CV_16U);
-	imgHeap = cvCreateImage(cvSize(640,480),IPL_DEPTH_16U,1);
 	fileWriter.init();
 }
 
 KTM::KinectWrapper::~KinectWrapper(){
 	disconnectDevice();
 
-    delete[] mDataHeap;
+    delete[] mDepthDataHeap;
 }
 
 HRESULT KTM::KinectWrapper::streamFromKinect(){
 	HRESULT hr;
-	
-	cv::destroyWindow("Playback");
 
 	streamingFromFile = false;
-	inVideo.release();
 	inFile.close();
 
 	hr = connectDevice();
@@ -51,12 +41,6 @@ bool KTM::KinectWrapper::streamFromFile(char* fPath){
 	
 	streamingFromFile = inFile.is_open();
 
-	long start = inFile.tellg();
-	inFile.seekg(0, std::ios_base::end);
-	long end = inFile.tellg();
-
-	long size = end - start;
-	float frames = (float)size / (float)(iFrameHeight *iFrameWidth * sizeof(unsigned short));
 	inFile.clear();
 	inFile.seekg(0, std::ios_base::beg);
 	playbackStartTime = timeGetTime();
@@ -235,7 +219,7 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 }
 
 USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
-	USHORT* frameData = mDataHeap;
+	USHORT* frameData = mDepthDataHeap;
 
 	char* type = new char[6];
 	inFile.read(type, 5);
@@ -252,11 +236,11 @@ USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
 	frameTime = t[0];
 	delete t;
 
-	int frameSize = iFrameWidth * iFrameHeight * sizeof(unsigned short);
+	int frameSize = depthFrameWidth * depthFrameHeight * sizeof(unsigned short);
 	if(!inFile.is_open())
 		return NULL;
 
-	USHORT* cData = mDataHeap;
+	USHORT* cData = mDepthDataHeap;
 
 	inFile.read((char*)cData, frameSize);
 
@@ -316,12 +300,12 @@ USHORT* KTM::KinectWrapper::getDepthFromKinectStream(){
     if (lockedRect.Pitch != 0){
 		/* Use the assigned data heap to avoid memory leaks and avoid */
 		/* needlessly assigning new memory                            */
-        USHORT* mFrameData = mDataHeap;
+        USHORT* mFrameData = mDepthDataHeap;
 
 		/* Pointer to the top left corner of rectangle, and pointer */
 		/* to the frame end                                         */
         const USHORT* pBufferRun = (const unsigned short*)lockedRect.pBits;
-        const USHORT* pBufferEnd = pBufferRun + (iFrameWidth * iFrameHeight);
+        const USHORT* pBufferEnd = pBufferRun + (depthFrameWidth * depthFrameHeight);
 
         while ( pBufferRun < pBufferEnd ){
             /* discard the portion of the depth that contains only the player index */
@@ -343,7 +327,7 @@ USHORT* KTM::KinectWrapper::getDepthFromKinectStream(){
     pTexture->UnlockRect(0);
     pKinectSensor->NuiImageStreamReleaseFrame(hDepthStreamHandle, &imageFrame);
 
-	return mDataHeap;
+	return mDepthDataHeap;
 }
 
 char* KTM::KinectWrapper::getColorFromKinectStream(){
@@ -375,7 +359,7 @@ char* KTM::KinectWrapper::getColorFromKinectStream(){
 		/* Pointer to the top left corner of rectangle, and pointer */
 		/* to the frame end                                         */
         const char* pBufferRun = (const char*)lockedRect.pBits;
-        const char* pBufferEnd = pBufferRun + (iFrameWidth * iFrameHeight * 4);
+        const char* pBufferEnd = pBufferRun + (depthFrameWidth * depthFrameHeight * 4);
 
 		memcpy(mFrameData, pBufferRun, pBufferEnd - pBufferRun);
     }

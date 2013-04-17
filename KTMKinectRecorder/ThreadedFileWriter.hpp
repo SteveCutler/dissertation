@@ -1,8 +1,6 @@
 #pragma once
 
 #include <pthread.h>
-#include <opencv\cv.h>
-#include <opencv\highgui.h>
 #include <queue>
 #include <iostream>
 #include <sstream>
@@ -16,9 +14,6 @@
 #define OUT_FRAME_HEIGHT 480
 #define OUT_FRAME_CHANNELS 4
 
-//#define KTM_USE_CV
-#define KTM_USE_BOOST
-//#define KTM_USE_STD
 
 #include "NotificationInterface.hpp"
 
@@ -37,13 +32,8 @@ namespace KTM{
 		pthread_mutex_t outFileMutex;
 		std::queue<KTM::DataToWrite> dataQueue;
 
-		/* File Writers */
-#ifdef KTM_USE_CV
-		cv::VideoWriter cvOutFile;
-#endif
-#ifdef KTM_USE_BOOST
 		boost::iostreams::basic_file_sink<char>* outFile;
-#endif
+
 		int framesWritten;
 		bool writeProcessActive;
 		pthread_t writeProcessThread;

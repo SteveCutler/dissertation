@@ -18,7 +18,7 @@
 /// <returns>status</returns>
 int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-    CDepthBasics application;
+    KinectRecorder application;
 	
     application.Run(hInstance, nCmdShow);
 }
@@ -26,9 +26,8 @@ int APIENTRY wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmd
 /// <summary>
 /// Constructor
 /// </summary>
-CDepthBasics::CDepthBasics() :
-    m_pD2DFactory(NULL)//,
-//    m_pDrawDepth(NULL)
+KinectRecorder::KinectRecorder() :
+    m_pD2DFactory(NULL)
 {
 	kinect = new KTM::KinectWrapper();
 }
@@ -36,11 +35,7 @@ CDepthBasics::CDepthBasics() :
 /// <summary>
 /// Destructor
 /// </summary>
-CDepthBasics::~CDepthBasics(){
-    // clean up Direct2D renderer
-    //delete m_pDrawDepth;
-   // m_pDrawDepth = NULL;
-
+KinectRecorder::~KinectRecorder(){
     // clean up Direct2D
 	if(m_pD2DFactory){
 		m_pD2DFactory->Release();
@@ -53,7 +48,7 @@ CDepthBasics::~CDepthBasics(){
 /// </summary>
 /// <param name="hInstance">handle to the application instance</param>
 /// <param name="nCmdShow">whether to display minimized, maximized, or normally</param>
-int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
+int KinectRecorder::Run(HINSTANCE hInstance, int nCmdShow){
     MSG       msg = {0};
     WNDCLASS  wc;
 
@@ -77,7 +72,7 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
         hInstance,
         MAKEINTRESOURCE(IDD_APP),
         NULL,
-        (DLGPROC)CDepthBasics::MessageRouter, 
+        (DLGPROC)KinectRecorder::MessageRouter, 
         reinterpret_cast<LPARAM>(this));
 
     // Show window
@@ -92,18 +87,7 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
     // Main message loop
     while (WM_QUIT != msg.message)
     {
-      //  hEvents[0] = m_hNextDepthFrameEvent;
-
-        // Check to see if we have either a message (by passing in QS_ALLINPUT)
-        // Or a Kinect event (hEvents)
-        // Update() will check for Kinect events individually, in case more than one are signalled
-       // DWORD dwEvent = MsgWaitForMultipleObjects(eventCount, hEvents, FALSE, INFINITE, QS_ALLINPUT);
-
-        // Check if this is an event we're waiting on and not a timeout or message
-       // if (WAIT_OBJECT_0 == dwEvent)
-       // {
-            Update();
-       // }
+		Update();
 
         if (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -124,7 +108,7 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
 /// <summary>
 /// Main processing function
 /// </summary>
-void CDepthBasics::Update(){
+void KinectRecorder::Update(){
 	USHORT* depthData = NULL;
 	char* RGBData = NULL;
 	if(NULL != kinect)
@@ -143,18 +127,18 @@ void CDepthBasics::Update(){
 /// <param name="wParam">message data</param>
 /// <param name="lParam">additional message data</param>
 /// <returns>result of message processing</returns>
-LRESULT CALLBACK CDepthBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK KinectRecorder::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    CDepthBasics* pThis = NULL;
+    KinectRecorder* pThis = NULL;
     
     if (WM_INITDIALOG == uMsg)
     {
-        pThis = reinterpret_cast<CDepthBasics*>(lParam);
+        pThis = reinterpret_cast<KinectRecorder*>(lParam);
         SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pThis));
     }
     else
     {
-        pThis = reinterpret_cast<CDepthBasics*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
+        pThis = reinterpret_cast<KinectRecorder*>(::GetWindowLongPtr(hWnd, GWLP_USERDATA));
     }
 
     if (pThis)
@@ -173,7 +157,7 @@ LRESULT CALLBACK CDepthBasics::MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam
 /// <param name="wParam">message data</param>
 /// <param name="lParam">additional message data</param>
 /// <returns>result of message processing</returns>
-LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
@@ -189,7 +173,6 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
             // We'll use this to draw the data we receive from the Kinect to the screen
 			/* Connect Kinect Device */
 
-			//SetStatusMessage(L"Connecting to device...");
 			HRESULT hr;
 
             m_pDrawDepth = new ImageRenderer();
@@ -317,13 +300,13 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 /// Set the status bar message
 /// </summary>
 /// <param name="szMessage">message to display</param>
-void CDepthBasics::SetStatusMessage(WCHAR * szMessage)
+void KinectRecorder::SetStatusMessage(WCHAR * szMessage)
 {
     //SendDlgItemMessageW(m_hWnd, IDC_STATUS, WM_SETTEXT, 0, (LPARAM)szMessage);
 	KTM::NotificationInterface::setMessage(szMessage);
 }
 
-std::string CDepthBasics::getFilePath(){
+std::string KinectRecorder::getFilePath(){
 	OPENFILENAME ofn;
 	wchar_t fileName[MAX_PATH];
 	char fileNameC[MAX_PATH] = "";

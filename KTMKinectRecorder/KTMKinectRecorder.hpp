@@ -14,7 +14,7 @@
 #include <d2d1.h>
 #pragma comment ( lib, "d2d1.lib" )
 
-class CDepthBasics{
+class KinectRecorder{
     static const int        cStatusMessageMaxLen = MAX_PATH*2;
 	KTM::KinectWrapper*		kinect;
 
@@ -22,12 +22,12 @@ public:
     /// <summary>
     /// Constructor
     /// </summary>
-    CDepthBasics();
+    KinectRecorder();
 
     /// <summary>
     /// Destructor
     /// </summary>
-    ~CDepthBasics();
+    ~KinectRecorder();
 
     /// <summary>
     /// Handles window messages, passes most to the class instance to handle
