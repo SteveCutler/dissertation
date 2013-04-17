@@ -6,6 +6,7 @@
 
 //
 #include "KTMKinectRecorder.hpp"
+#include "NotificationInterface.hpp"
 
 /// <summary>
 /// Entry point for the application
@@ -84,6 +85,9 @@ int CDepthBasics::Run(HINSTANCE hInstance, int nCmdShow){
 
     const int eventCount = 1;
     //HANDLE hEvents[eventCount];
+
+	KTM::NotificationInterface::setWindowHandle(m_hWnd);
+	KTM::NotificationInterface::setMessageBoxControl(IDC_STATUS);
 
     // Main message loop
     while (WM_QUIT != msg.message)
@@ -304,5 +308,6 @@ LRESULT CALLBACK CDepthBasics::DlgProc(HWND hWnd, UINT message, WPARAM wParam, L
 /// <param name="szMessage">message to display</param>
 void CDepthBasics::SetStatusMessage(WCHAR * szMessage)
 {
-    SendDlgItemMessageW(m_hWnd, IDC_STATUS, WM_SETTEXT, 0, (LPARAM)szMessage);
+    //SendDlgItemMessageW(m_hWnd, IDC_STATUS, WM_SETTEXT, 0, (LPARAM)szMessage);
+	KTM::NotificationInterface::setMessage(szMessage);
 }

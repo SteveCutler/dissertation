@@ -92,15 +92,22 @@ bool KTM::ThreadedFileWriter::setOutFile(char* filePath){
 
 bool KTM::ThreadedFileWriter::releaseOutFile(){
 	bool queueEmpty = false;
+	KTM::NotificationInterface::setMessage(L"Waiting for file output to finish...");
+	
 	while(!queueEmpty){
 		pthread_mutex_lock(&dataQueueMutex);
 		int s = dataQueue.size();
+		std::wstringstream ss;
+		ss << "Waiting for file output to finish: " << s;
+		KTM::NotificationInterface::setMessage((wchar_t*)ss.str().c_str());
 		queueEmpty = dataQueue.empty();
 		pthread_mutex_unlock(&dataQueueMutex);
+		Sleep(500);
 	}
 
 	writeProcessActive = false;
 
+	KTM::NotificationInterface::setMessage(L"Closing file...");
 	pthread_mutex_lock(&outFileMutex);
 	if(NULL != outFile){
 		outFile->close();
@@ -109,6 +116,8 @@ bool KTM::ThreadedFileWriter::releaseOutFile(){
 	pthread_mutex_unlock(&outFileMutex);
 
 	pthread_join(writeProcessThread, NULL);
+
+	KTM::NotificationInterface::setMessage(L"File output complete!");
 	return NULL == outFile;
 }
 

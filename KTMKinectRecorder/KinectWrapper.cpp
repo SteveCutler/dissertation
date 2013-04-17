@@ -135,8 +135,6 @@ HRESULT KTM::KinectWrapper::connectDevice(){
                 hNextDepthFrameEvent,
                 &hDepthStreamHandle
 			);
-
-
         }
     }
 

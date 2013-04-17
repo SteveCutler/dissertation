@@ -16,7 +16,7 @@
 #include <boost\iostreams\concepts.hpp>
 
 #include "ThreadedFileWriter.hpp"
-
+#include "NotificationInterface.hpp"
 
 namespace KTM{
 	#define FILE_FRAME_SEPERATOR ""

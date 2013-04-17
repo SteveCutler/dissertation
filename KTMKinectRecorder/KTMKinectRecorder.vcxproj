@@ -78,7 +78,8 @@
   <ItemGroup>
     <ClInclude Include="ImageRenderer.hpp" />
     <ClInclude Include="KTMKinectRecorder.hpp" />
-    <ClInclude Include="KTMKinectWrapper.hpp" />
+    <ClInclude Include="KinectWrapper.hpp" />
+    <ClInclude Include="NotificationInterface.hpp" />
     <ClInclude Include="ThreadedFileWriter.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Util.hpp" />
@@ -86,7 +87,8 @@
   <ItemGroup>
     <ClCompile Include="ImageRenderer.cpp" />
     <ClCompile Include="KTMKinectRecorder.cpp" />
-    <ClCompile Include="KTMKinectWrapper.cpp" />
+    <ClCompile Include="KinectWrapper.cpp" />
+    <ClCompile Include="NotificationInterface.cpp" />
     <ClCompile Include="ThreadedFileWriter.cpp" />
   </ItemGroup>
   <ItemGroup>

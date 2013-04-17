@@ -5,6 +5,7 @@
 #include <opencv\highgui.h>
 #include <queue>
 #include <iostream>
+#include <sstream>
 #include <boost\iostreams\device\file.hpp>
 #include <boost\iostreams\categories.hpp>
 #include <boost\iostreams\concepts.hpp>
@@ -18,6 +19,8 @@
 //#define KTM_USE_CV
 #define KTM_USE_BOOST
 //#define KTM_USE_STD
+
+#include "NotificationInterface.hpp"
 
 namespace KTM{
 	struct DataToWrite{

@@ -3,10 +3,8 @@
 
 #include <Windows.h>
 #include "KinectWrapper.hpp"
-//#include "stdafx.h"
 #include "NuiApi.h"
 #include "resource.h"
-
 #include "ImageRenderer.hpp"
 
 
