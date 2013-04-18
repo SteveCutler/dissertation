@@ -40,6 +40,7 @@ namespace KTM{
 
 		void* writeProcess(void* threadArgs);
 		static void* writeProcessStarter(void* context);
+		char* currentFilePath;
 	public:
 		bool init();
 		bool setOutFile(char* filePath);

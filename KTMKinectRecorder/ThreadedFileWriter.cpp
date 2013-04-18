@@ -3,6 +3,7 @@
 bool KTM::ThreadedFileWriter::init(){
 	dataQueueMutex = PTHREAD_MUTEX_INITIALIZER;
 	outFileMutex = PTHREAD_MUTEX_INITIALIZER;
+	writeProcessActive = false;
 	return true;
 }
 
@@ -31,7 +32,8 @@ bool KTM::ThreadedFileWriter::startWriteProcess(){
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
+	if(writeProcessActive)
+		return false;
 	return pthread_create(&writeProcessThread, &attr, &KTM::ThreadedFileWriter::writeProcessStarter, this) == 0;
 }
 
@@ -41,11 +43,17 @@ void* KTM::ThreadedFileWriter::writeProcessStarter(void* context){
 
 bool KTM::ThreadedFileWriter::setOutFile(char* filePath){
 	pthread_mutex_lock(&outFileMutex);
+
 	outFile = new boost::iostreams::basic_file_sink<char>(filePath, std::ios_base::binary);
-	if(NULL == outFile)
+	if(NULL == outFile){
+		pthread_mutex_unlock(&outFileMutex);
 		return false;
+	}
 	pthread_mutex_unlock(&outFileMutex);
-	return startWriteProcess();
+	if(!writeProcessActive)
+		return startWriteProcess();
+	else
+		return true;
 }
 
 bool KTM::ThreadedFileWriter::releaseOutFile(){
