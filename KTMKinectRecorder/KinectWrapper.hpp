@@ -36,10 +36,12 @@ namespace KTM{
 		long playbackLastTime;
 		long timeSinceStart;
 
+		bool hasDepth;
 		NUI_IMAGE_RESOLUTION depthResolutionCode;
 		int depthFrameWidth;
 		int depthFrameHeight;
 
+		bool hasRGB;
 		NUI_IMAGE_RESOLUTION RGBResolutionCode;
 		int RGBFrameHeight;
 		int RGBFrameWidth;
@@ -77,6 +79,7 @@ namespace KTM{
 		bool releaseOutFile();
 		bool releaseInFile();
 		bool streamFromFile(char*);
+		void skipFileInfo();
 
 		/* TODO: Remove! Replaced by setters and getters for resolution */
 		int getFrameWidth(){ return depthFrameWidth; };
@@ -89,6 +92,12 @@ namespace KTM{
 		NUI_IMAGE_RESOLUTION getDepthResolutionCode();
 		void getRGBResolution(int &width, int &height);
 		void getDepthResolution(int &width, int &height);
+
+		/* Setters and getters for recording different streams */
+		void setRecordRGB(bool b);
+		void setRecordDepth(bool b);
+		bool getRecordRGB();
+		bool getRecordDepth();
 	};
 };
 #endif

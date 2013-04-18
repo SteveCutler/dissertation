@@ -46,6 +46,11 @@ public:
     /// <returns>indicates success or failure</returns>
     HRESULT DrawDepth(USHORT* pImage, unsigned long cbImage);
 	HRESULT DrawRGB(char* pImage, unsigned long cbImage);
+
+    /// <summary>
+    /// Dispose of Direct2d resources 
+    /// </summary>
+    void DiscardResources( );
 private:
     HWND                     m_hWnd;
 
@@ -64,11 +69,6 @@ private:
     /// </summary>
     /// <returns>indicates success or failure</returns>
     HRESULT EnsureResources( );
-
-    /// <summary>
-    /// Dispose of Direct2d resources 
-    /// </summary>
-    void DiscardResources( );
 };
 
 #endif

@@ -142,14 +142,18 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
 //        return E_INVALIDARG;
 
 	char* rgbaData = new char[m_sourceWidth * m_sourceHeight * 4];
-	for(unsigned int i = 0; i < cbImage; i++){
-		/* Assign depth data to the red blue and green channels, leaving the alpha channel zero */
-		unsigned char d = 0;
-		if(pImage[i] != 0)
-			d = unsigned char(255 - (((float)pImage[i] / 4000.0f) * 255));
-		rgbaData[(i * 4)] = d;
-		rgbaData[(i * 4) + 1] = d;
-		rgbaData[(i * 4) + 2] = d;
+	if(NULL != pImage){
+		for(unsigned int i = 0; i < cbImage; i++){
+			/* Assign depth data to the red blue and green channels, leaving the alpha channel zero */
+			unsigned char d = 0;
+			if(pImage[i] != 0)
+				d = unsigned char(255 - (((float)pImage[i] / 4000.0f) * 255));
+			rgbaData[(i * 4)] = d;
+			rgbaData[(i * 4) + 1] = d;
+			rgbaData[(i * 4) + 2] = d;
+		}
+	}else{
+		ZeroMemory(rgbaData, m_sourceWidth * m_sourceHeight * 4);
 	}
 
     // create the resources for this draw device
@@ -192,8 +196,12 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
 
 HRESULT ImageRenderer::DrawRGB(char* pImage, unsigned long cbImage){
 	char* rgbaData = new char[m_sourceWidth * m_sourceHeight * 4];
-	for(unsigned int i = 0; i < cbImage;i++){
-		rgbaData[i] = pImage[i];
+	if(NULL != pImage){
+		for(unsigned int i = 0; i < cbImage;i++){
+			rgbaData[i] = pImage[i];
+		}
+	}else{
+		ZeroMemory(rgbaData, m_sourceWidth * m_sourceHeight * 4);
 	}
 
     // create the resources for this draw device

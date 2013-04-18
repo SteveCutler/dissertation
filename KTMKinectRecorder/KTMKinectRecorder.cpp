@@ -111,12 +111,19 @@ int KinectRecorder::Run(HINSTANCE hInstance, int nCmdShow){
 void KinectRecorder::Update(){
 	USHORT* depthData = NULL;
 	char* RGBData = NULL;
-	if(NULL != kinect)
+
+	int width;
+	int height;
+
+	if(NULL != kinect){
 		kinect->nextFrame(depthData, RGBData);
-	if(NULL != depthData)
-		m_pDrawDepth->DrawDepth(depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH);
-	if(NULL != RGBData)
-		m_pDrawRGB->DrawRGB(RGBData, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4);
+
+		kinect->getDepthResolution(width, height);
+		m_pDrawDepth->DrawDepth(depthData, width * height);
+
+		kinect->getRGBResolution(width, height);
+		m_pDrawRGB->DrawRGB(RGBData, width * height * 4);
+	}
 }
 
 /// <summary>
@@ -188,6 +195,11 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 			EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), FALSE);
 			EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 			EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+			enableResolutionButtons(false);
+			CheckDlgButton(m_hWnd,IDC_CHECK_NEAR_MODE, BST_CHECKED);
+			CheckDlgButton(m_hWnd,IDC_RECORD_RGB, BST_CHECKED);
+			CheckDlgButton(m_hWnd,IDC_RECORD_DEPTH, BST_CHECKED);
+			updateResolutionButtons();
         }
         break;
 
@@ -211,9 +223,9 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 					kinect->setNearMode(m_bNearMode);
 
 				if(m_bNearMode)
-					SetStatusMessage(L"Near mode enabled...");
+					CheckDlgButton(m_hWnd,IDC_CHECK_NEAR_MODE, BST_CHECKED);
 				else
-					SetStatusMessage(L"Near mode disabled...");
+					CheckDlgButton(m_hWnd,IDC_CHECK_NEAR_MODE, BST_UNCHECKED);
             }
 
             if (ID_MENU_FILE_OPEN == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
@@ -222,12 +234,16 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
+				enableResolutionButtons(false);
 				SetStatusMessage(L"Disconnecting Kinect...");
 				kinect->disconnectDevice();
 				std::string fp = getFilePath();
 				SetStatusMessage(L"Setting up file stream...");
 				if(kinect->streamFromFile((char*)fp.c_str()) && !fp.empty()){
 					SetStatusMessage(L"Streaming from file...");
+					resetDepthImageRenderer();
+					resetRGBImageRenderer();
+					updateResolutionButtons();
 				}else{
 					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
@@ -235,6 +251,34 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
 					SetStatusMessage(L"Could not stream from file...");
 				}
+            }
+
+			if (IDC_RGB_RESOLUTION_1280_960 == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				changeRGBResolution(NUI_IMAGE_RESOLUTION_1280x960);
+            }
+
+			if (IDC_RGB_RESOLUTION_640_480== LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				changeRGBResolution(NUI_IMAGE_RESOLUTION_640x480);
+            }
+
+			if (IDC_DEPTH_RESOLUTION_640_480 == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				changeDepthResolution(NUI_IMAGE_RESOLUTION_640x480);
+            }
+
+			if (IDC_DEPTH_RESOLUTION_320_240 == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				changeDepthResolution(NUI_IMAGE_RESOLUTION_320x240);
+            }
+
+			if (IDC_DEPTH_RESOLUTION_80_60 == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				changeDepthResolution(NUI_IMAGE_RESOLUTION_80x60);
+            }
+
+			if (IDC_RECORD_RGB == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				kinect->setRecordRGB(IsDlgButtonChecked(m_hWnd, IDC_RECORD_RGB) == BST_CHECKED);
+            }
+
+			if (IDC_RECORD_DEPTH == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				kinect->setRecordDepth(IsDlgButtonChecked(m_hWnd, IDC_RECORD_DEPTH) == BST_CHECKED);
             }
 
             if (ID_MENU_FILE_SETRECORDFILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
@@ -264,6 +308,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
+					enableResolutionButtons(false);
 				}else{
 					SetStatusMessage(L"Streaming from Kinect...");
 					EnableWindow(GetDlgItem(m_hWnd, IDC_CHECK_NEAR_MODE), TRUE);
@@ -272,6 +317,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 					else
 						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					enableResolutionButtons(true);
 				}
 			}
 
@@ -282,6 +328,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				SetStatusMessage(L"Recording...");
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), TRUE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
+				enableResolutionButtons(false);
 			}
 
 			if(IDC_BUTTON_RECORD_STOP == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
@@ -291,6 +338,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
+				enableResolutionButtons(true);
 			}
             break;
     }
@@ -332,4 +380,114 @@ std::string KinectRecorder::getFilePath(){
 	fileNameStr = fileNameC;
 
 	return fileNameStr;
+}
+
+void KinectRecorder::changeRGBResolution(NUI_IMAGE_RESOLUTION resolutionCode){
+	switch(resolutionCode){
+	case NUI_IMAGE_RESOLUTION_1280x960:
+		SetStatusMessage(L"Changing to 1280 x 960 RGB Resolution");
+		break;
+	case NUI_IMAGE_RESOLUTION_640x480:
+		SetStatusMessage(L"Changing to 640 x 480 RGB Resolution");
+		break;
+	default:
+		SetStatusMessage(L"Not a valid resolution...");
+		break;
+	}
+	
+	kinect->setRGBRecordingResolution(resolutionCode);
+	resetRGBImageRenderer();
+}
+
+void KinectRecorder::changeDepthResolution(NUI_IMAGE_RESOLUTION resolutionCode){
+	switch(resolutionCode){
+	case NUI_IMAGE_RESOLUTION_640x480:
+		SetStatusMessage(L"Changing to 640 x 480 Depth Resolution");
+		break;
+	case NUI_IMAGE_RESOLUTION_320x240:
+		SetStatusMessage(L"Changing to 320 x 240 Depth Resolution");
+		break;
+	case NUI_IMAGE_RESOLUTION_80x60:
+		SetStatusMessage(L"Changing to 80 x 60 Depth Resolution");
+		break;
+	default:
+		SetStatusMessage(L"Not a valid resolution...");
+		break;
+	}
+	
+	kinect->setDepthRecordingResolution(resolutionCode);
+	resetDepthImageRenderer();
+}
+
+void KinectRecorder::resetDepthImageRenderer(){
+	int width;
+	int height;
+
+	kinect->getDepthResolution(width, height);
+
+	delete m_pDrawDepth;
+	m_pDrawDepth = new ImageRenderer();
+	HRESULT hr = m_pDrawDepth->Initialize(GetDlgItem(m_hWnd, IDC_DEPTH_VIEW), m_pD2DFactory, width, height, width * sizeof(ULONG));
+    if (FAILED(hr))
+        SetStatusMessage(L"Failed to initialize the Depth draw device.");
+}
+
+void KinectRecorder::resetRGBImageRenderer(){
+	int width;
+	int height;
+
+	kinect->getRGBResolution(width, height);
+
+	delete m_pDrawRGB;
+	m_pDrawRGB = new ImageRenderer();
+	HRESULT hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, width, height, width * 4 * sizeof(UCHAR));
+    if (FAILED(hr))
+        SetStatusMessage(L"Failed to initialize the RGB draw device.");
+}
+
+void KinectRecorder::enableResolutionButtons(bool enabled){
+	int e = enabled ? TRUE : FALSE;
+	EnableWindow(GetDlgItem(m_hWnd, IDC_RGB_RESOLUTION_1280_960), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_RGB_RESOLUTION_640_480), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_DEPTH_RESOLUTION_640_480), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_DEPTH_RESOLUTION_320_240), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_DEPTH_RESOLUTION_80_60), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_RECORD_RGB), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_RECORD_DEPTH), e);
+}
+
+void KinectRecorder::updateResolutionButtons(){
+	NUI_IMAGE_RESOLUTION res = kinect->getDepthResolutionCode();
+
+	CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_640_480, BST_UNCHECKED);
+	CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_320_240, BST_UNCHECKED);
+	CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_80_60, BST_UNCHECKED);
+	CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_1280_960, BST_UNCHECKED);
+	CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_640_480, BST_UNCHECKED);
+
+	switch(res){
+	case NUI_IMAGE_RESOLUTION_640x480:
+		CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_640_480, BST_CHECKED);
+		break;
+	case NUI_IMAGE_RESOLUTION_320x240:
+		CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_320_240, BST_CHECKED);
+		break;
+	case NUI_IMAGE_RESOLUTION_80x60:
+		CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_80_60, BST_CHECKED);
+		break;
+	}
+
+	res = kinect->getRGBResolutionCode();
+
+	switch(res){
+	case NUI_IMAGE_RESOLUTION_1280x960:
+		CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_1280_960, BST_CHECKED);
+		break;	
+	case NUI_IMAGE_RESOLUTION_640x480:
+		CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_640_480, BST_CHECKED);
+		break;
+	}
+
+	CheckDlgButton(m_hWnd,IDC_RECORD_RGB, kinect->getRecordRGB() ? BST_CHECKED : BST_UNCHECKED);
+	CheckDlgButton(m_hWnd,IDC_RECORD_DEPTH, kinect->getRecordDepth() ? BST_CHECKED : BST_UNCHECKED);
 }

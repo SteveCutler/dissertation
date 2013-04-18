@@ -44,8 +44,67 @@ bool KTM::KinectWrapper::streamFromFile(char* fPath){
 
 	inFile.clear();
 	inFile.seekg(0, std::ios_base::beg);
+
+	hasDepth = false;
+	hasRGB = false;
+
+	char info[9] = "";
+	inFile.read(info, 5);
+	info[5] = '\0';
+	if(strcmp(info, "DEPTH") == 0){
+		hasDepth = true;
+		inFile.read(info, 8);
+		info[8] = '\0';
+		if(strcmp(info, "640X480 ") == 0)
+			setDepthRecordingResolution(NUI_IMAGE_RESOLUTION_640x480);
+		else if(strcmp(info, "320X240 ") == 0)
+			setDepthRecordingResolution(NUI_IMAGE_RESOLUTION_320x240);
+		else if(strcmp(info, "80X60   ") == 0)
+			setDepthRecordingResolution(NUI_IMAGE_RESOLUTION_80x60);
+		else
+			return false;
+	}else{
+		inFile.seekg(-5, std::ios_base::cur);
+	}
+
+	inFile.read(info, 5);
+	info[5] = '\0';
+	if(strcmp(info, "RGB  ") == 0){
+		hasRGB = true;
+		inFile.read(info, 8);
+		info[8] = '\0';
+		if(strcmp(info, "1280X960") == 0)
+			setRGBRecordingResolution(NUI_IMAGE_RESOLUTION_1280x960);
+		else if(strcmp(info, "640X480 ") == 0)
+			setRGBRecordingResolution(NUI_IMAGE_RESOLUTION_640x480);
+		else
+			return false;
+	}else{
+		inFile.seekg(-5, std::ios_base::cur);
+	}
+
 	playbackStartTime = timeGetTime();
 	return streamingFromFile;
+}
+
+void KTM::KinectWrapper::skipFileInfo(){
+	char info[9] = "";
+	inFile.read(info, 5);
+	info[5] = '\0';
+	if(strcmp(info, "DEPTH") == 0){
+		hasDepth = true;
+		inFile.seekg(8, std::ios_base::cur);
+	}else{
+		inFile.seekg(-5, std::ios_base::cur);
+	}
+
+	inFile.read(info, 5);
+	info[5] = '\0';
+	if(strcmp(info, "RGB  ") == 0){
+		inFile.seekg(8, std::ios_base::cur);
+	}else{
+		inFile.seekg(-5, std::ios_base::cur);
+	}
 }
 
 bool KTM::KinectWrapper::setOutFile(char* fileName){
@@ -64,10 +123,27 @@ bool KTM::KinectWrapper::hasOutFile(){
 
 void KTM::KinectWrapper::record(bool r){
 	recordEnable = r;
-	if(recordEnable)
+	if(recordEnable){
 		recordStartTime = timeGetTime();
-	else
+		if(hasDepth){
+			fileWriter.write("DEPTH", 5);
+			if(depthResolutionCode == NUI_IMAGE_RESOLUTION_640x480)
+				fileWriter.write("640X480 ", 8);
+			if(depthResolutionCode == NUI_IMAGE_RESOLUTION_320x240)
+				fileWriter.write("320X240 ", 8);
+			if(depthResolutionCode == NUI_IMAGE_RESOLUTION_80x60)
+				fileWriter.write("80X60   ", 8);
+		}
+		if(hasRGB){
+			fileWriter.write("RGB  ", 5);
+			if(RGBResolutionCode == NUI_IMAGE_RESOLUTION_1280x960)
+				fileWriter.write("1280X960", 8);
+			if(RGBResolutionCode == NUI_IMAGE_RESOLUTION_640x480)
+				fileWriter.write("640X480 ", 8);
+		}
+	}else{
 		recordStartTime = 0;
+	}
 }
 
 bool KTM::KinectWrapper::releaseOutFile(){
@@ -178,18 +254,21 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	if(streamingFromFile){
 		
 		long frameTime = 0;
-		depthData = this->getDepthFromFileStream(frameTime);
-		RGBdata = this->getRGBAFromFileStream(frameTime);
+		if(hasDepth)
+			depthData = this->getDepthFromFileStream(frameTime);
+		if(hasRGB)
+			RGBdata = this->getRGBAFromFileStream(frameTime);
 
 		long currentTime = timeGetTime();
 		long timeSincePlaybackStart = currentTime - playbackStartTime;
 		if(timeSincePlaybackStart < frameTime)
 			Sleep(frameTime - timeSincePlaybackStart);
 
-		if(inFile.eof()){
+		if(inFile.eof() || inFile.fail()){
 			inFile.clear();
 			inFile.seekg(0, std::ios_base::beg);
-			playbackLastTime = timeGetTime();
+			skipFileInfo();
+			playbackStartTime = timeGetTime();
 		}
 	}else{
 		if(NULL == pKinectSensor)
@@ -206,21 +285,26 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 		long currentTime = timeGetTime();
 		timeSinceStart = currentTime - recordStartTime;
 
-		if(NULL != depthData){
+		if(NULL != depthData && hasDepth){
 			fileWriter.write("DEPTH", 5 * sizeof(char));
 			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
 			fileWriter.write((char*)depthData, depthFrameWidth * depthFrameHeight * sizeof(USHORT));
 		}
 
-		if(NULL != RGBdata){
+		if(NULL != RGBdata && hasRGB){
 			fileWriter.write("RGB  ", 5);
 			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
 			fileWriter.write(RGBdata, RGBFrameWidth * RGBFrameHeight * 4 * sizeof(unsigned char));
 		}
 	}
 
-	outDepthData = depthData;
-	outRGBData = RGBdata;
+	outDepthData = NULL;
+	outRGBData = NULL;
+
+	if(hasDepth)
+		outDepthData = depthData;
+	if(hasRGB)
+		outRGBData = RGBdata;
 }
 
 USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
@@ -410,10 +494,7 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
 }
 
 bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode){
-	if(	NUIAPICode != NUI_IMAGE_RESOLUTION_1280x960 && 
-		NUIAPICode != NUI_IMAGE_RESOLUTION_640x480 && 
-		NUIAPICode != NUI_IMAGE_RESOLUTION_320x240 && 
-		NUIAPICode != NUI_IMAGE_RESOLUTION_80x60)
+	if(NUIAPICode != NUI_IMAGE_RESOLUTION_1280x960 && NUIAPICode != NUI_IMAGE_RESOLUTION_640x480)
 		return false;
 
 	RGBResolutionCode = NUIAPICode;
@@ -431,14 +512,6 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 	case NUI_IMAGE_RESOLUTION_640x480:
 		RGBFrameWidth = 640;
 		RGBFrameHeight = 480;
-		break;
-	case NUI_IMAGE_RESOLUTION_320x240:
-		RGBFrameWidth = 320;
-		RGBFrameHeight = 240;
-		break;
-	case NUI_IMAGE_RESOLUTION_80x60:
-		RGBFrameWidth = 80;
-		RGBFrameHeight = 60;
 		break;
 	}
 
@@ -463,4 +536,20 @@ void KTM::KinectWrapper::getDepthResolution(int &width, int &height){
 void KTM::KinectWrapper::getRGBResolution(int &width, int &height){
 	width = RGBFrameWidth;
 	height = RGBFrameHeight;
+}
+
+void KTM::KinectWrapper::setRecordRGB(bool b){
+	hasRGB = b;
+}
+
+void KTM::KinectWrapper::setRecordDepth(bool b){
+	hasDepth = b;
+}
+
+bool KTM::KinectWrapper::getRecordRGB(){
+	return hasRGB;
+}
+
+bool KTM::KinectWrapper::getRecordDepth(){
+	return hasDepth;
 }

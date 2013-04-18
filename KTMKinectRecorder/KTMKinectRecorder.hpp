@@ -76,6 +76,12 @@ private:
     /// <param name="szMessage">message to display</param>
     void                    SetStatusMessage(WCHAR* szMessage);
 	std::string				getFilePath();
+	void					changeDepthResolution(NUI_IMAGE_RESOLUTION resolutionCode);
+	void					changeRGBResolution(NUI_IMAGE_RESOLUTION resolutionCode);
+	void					enableResolutionButtons(bool enabled);
+	void					updateResolutionButtons();
+	void					resetDepthImageRenderer();
+	void					resetRGBImageRenderer();
 };
 
 #endif
