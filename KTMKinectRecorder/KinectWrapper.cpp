@@ -2,8 +2,6 @@
 
 KTM::KinectWrapper::KinectWrapper() :
 	pKinectSensor(NULL),
-	depthFrameWidth(640),
-	depthFrameHeight(480),
 	streamingFromFile(false),
 	hNextDepthFrameEvent(NULL),
 	hNextColorFrameEvent(NULL),
@@ -11,8 +9,10 @@ KTM::KinectWrapper::KinectWrapper() :
 	outFileReady(false),
 	recordStartTime(0)
 {
-	mDepthDataHeap = new USHORT[depthFrameHeight*depthFrameWidth];
-	mRGBDataHeap = new char[640*480*4];
+	mRGBDataHeap = NULL;
+	mDepthDataHeap = NULL;
+	setRGBRecordingResolution(NUI_IMAGE_RESOLUTION_640x480);
+	setDepthRecordingResolution(NUI_IMAGE_RESOLUTION_640x480);
 	fileWriter.init();
 }
 
@@ -20,6 +20,7 @@ KTM::KinectWrapper::~KinectWrapper(){
 	disconnectDevice();
 
     delete[] mDepthDataHeap;
+	delete[] mRGBDataHeap;
 }
 
 HRESULT KTM::KinectWrapper::streamFromKinect(){
@@ -118,7 +119,7 @@ HRESULT KTM::KinectWrapper::connectDevice(){
             // Open a depth image stream to receive depth frames
 			hr = pKinectSensor->NuiImageStreamOpen(
 				NUI_IMAGE_TYPE_COLOR,
-                NUI_IMAGE_RESOLUTION_640x480,
+                RGBResolutionCode,
                 0,
                 NUI_IMAGE_STREAM_FRAME_LIMIT_MAXIMUM,
                 hNextColorFrameEvent,
@@ -127,9 +128,9 @@ HRESULT KTM::KinectWrapper::connectDevice(){
 
 			hr = pKinectSensor->NuiImageStreamOpen(
 				NUI_IMAGE_TYPE_DEPTH,
-                NUI_IMAGE_RESOLUTION_640x480,
+				depthResolutionCode,
                 0,
-                2,
+                NUI_IMAGE_STREAM_FRAME_LIMIT_MAXIMUM,
                 hNextDepthFrameEvent,
                 &hDepthStreamHandle
 			);
@@ -153,6 +154,10 @@ void KTM::KinectWrapper::disconnectDevice(){
 	if (NULL != hNextDepthFrameEvent)
 		if(hNextDepthFrameEvent != INVALID_HANDLE_VALUE)
 			CloseHandle(hNextDepthFrameEvent);
+
+	if (NULL != hNextColorFrameEvent)
+		if(hNextColorFrameEvent != INVALID_HANDLE_VALUE)
+			CloseHandle(hNextColorFrameEvent);
 }
 
 bool KTM::KinectWrapper::isConnected(){
@@ -204,13 +209,13 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 		if(NULL != depthData){
 			fileWriter.write("DEPTH", 5 * sizeof(char));
 			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
-			fileWriter.write((char*)depthData, DEPTH_FRAME_HEIGHT * DEPTH_FRAME_WIDTH * sizeof(USHORT));
+			fileWriter.write((char*)depthData, depthFrameWidth * depthFrameHeight * sizeof(USHORT));
 		}
 
 		if(NULL != RGBdata){
 			fileWriter.write("RGB  ", 5);
 			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
-			fileWriter.write(RGBdata, RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char));
+			fileWriter.write(RGBdata, RGBFrameWidth * RGBFrameHeight * 4 * sizeof(unsigned char));
 		}
 	}
 
@@ -265,7 +270,7 @@ char* KTM::KinectWrapper::getRGBAFromFileStream(long &frameTime){
 	delete t;
 
 	char* frameData = mRGBDataHeap;
-	int frameSize = RGBA_FRAME_HEIGHT * RGBA_FRAME_WIDTH * 4 * sizeof(unsigned char);
+	int frameSize = RGBFrameHeight * RGBFrameWidth * 4 * sizeof(unsigned char);
 	if(!inFile.is_open())
 		return NULL;
 
@@ -359,7 +364,7 @@ char* KTM::KinectWrapper::getColorFromKinectStream(){
 		/* Pointer to the top left corner of rectangle, and pointer */
 		/* to the frame end                                         */
         const char* pBufferRun = (const char*)lockedRect.pBits;
-        const char* pBufferEnd = pBufferRun + (depthFrameWidth * depthFrameHeight * 4);
+        const char* pBufferEnd = pBufferRun + (RGBFrameWidth * RGBFrameHeight * 4);
 
 		memcpy(mFrameData, pBufferRun, pBufferEnd - pBufferRun);
     }
@@ -369,4 +374,93 @@ char* KTM::KinectWrapper::getColorFromKinectStream(){
     pKinectSensor->NuiImageStreamReleaseFrame(hColorStreamHandle, &imageFrame);
 
 	return mFrameData;
+}
+
+bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode){
+	if(	NUIAPICode != NUI_IMAGE_RESOLUTION_640x480 && 
+		NUIAPICode != NUI_IMAGE_RESOLUTION_320x240 && 
+		NUIAPICode != NUI_IMAGE_RESOLUTION_80x60)
+		return false;
+
+	depthResolutionCode = NUIAPICode;
+	if(isConnected()){
+		disconnectDevice();
+		if(FAILED(connectDevice()))
+			return false;
+	}
+
+	switch(depthResolutionCode){
+	case NUI_IMAGE_RESOLUTION_640x480:
+		depthFrameWidth = 640;
+		depthFrameHeight = 480;
+		break;
+	case NUI_IMAGE_RESOLUTION_320x240:
+		depthFrameWidth = 320;
+		depthFrameHeight = 240;
+		break;
+	case NUI_IMAGE_RESOLUTION_80x60:
+		depthFrameWidth = 80;
+		depthFrameHeight = 60;
+		break;
+	}
+
+	if(NULL != mDepthDataHeap)
+		delete[] mDepthDataHeap;
+	mDepthDataHeap = new USHORT[depthFrameHeight*depthFrameWidth];
+}
+
+bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode){
+	if(	NUIAPICode != NUI_IMAGE_RESOLUTION_1280x960 && 
+		NUIAPICode != NUI_IMAGE_RESOLUTION_640x480 && 
+		NUIAPICode != NUI_IMAGE_RESOLUTION_320x240 && 
+		NUIAPICode != NUI_IMAGE_RESOLUTION_80x60)
+		return false;
+
+	RGBResolutionCode = NUIAPICode;
+	if(isConnected()){
+		disconnectDevice();
+		if(FAILED(connectDevice()))
+			return false;
+	}
+
+	switch(RGBResolutionCode){
+	case NUI_IMAGE_RESOLUTION_1280x960:
+		RGBFrameWidth = 1280;
+		RGBFrameHeight = 960;
+		break;
+	case NUI_IMAGE_RESOLUTION_640x480:
+		RGBFrameWidth = 640;
+		RGBFrameHeight = 480;
+		break;
+	case NUI_IMAGE_RESOLUTION_320x240:
+		RGBFrameWidth = 320;
+		RGBFrameHeight = 240;
+		break;
+	case NUI_IMAGE_RESOLUTION_80x60:
+		RGBFrameWidth = 80;
+		RGBFrameHeight = 60;
+		break;
+	}
+
+	if(NULL != mRGBDataHeap)
+		delete[] mRGBDataHeap;
+	mRGBDataHeap = new char[RGBFrameHeight * RGBFrameWidth * 4];
+}
+
+NUI_IMAGE_RESOLUTION KTM::KinectWrapper::getRGBResolutionCode(){
+	return RGBResolutionCode;
+}
+
+NUI_IMAGE_RESOLUTION KTM::KinectWrapper::getDepthResolutionCode(){
+	return depthResolutionCode;
+}
+
+void KTM::KinectWrapper::getDepthResolution(int &width, int &height){
+	width = depthFrameWidth;
+	height = depthFrameHeight;
+}
+
+void KTM::KinectWrapper::getRGBResolution(int &width, int &height){
+	width = RGBFrameWidth;
+	height = RGBFrameHeight;
 }

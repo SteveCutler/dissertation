@@ -245,10 +245,12 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 					else
 						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
+					SendDlgItemMessageW(m_hWnd, IDC_RECORD_FILE_PATH_TEXT, WM_SETTEXT, 0, (LPARAM)L"File ready to record...");
 				}else{
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), FALSE);
 					EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 					SetStatusMessage(L"Could not open stream for writing...");
+					SendDlgItemMessageW(m_hWnd, IDC_RECORD_FILE_PATH_TEXT, WM_SETTEXT, 0, (LPARAM)L"No file to record to...");
 				}
             }
 

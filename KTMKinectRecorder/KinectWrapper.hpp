@@ -36,8 +36,13 @@ namespace KTM{
 		long playbackLastTime;
 		long timeSinceStart;
 
+		NUI_IMAGE_RESOLUTION depthResolutionCode;
 		int depthFrameWidth;
 		int depthFrameHeight;
+
+		NUI_IMAGE_RESOLUTION RGBResolutionCode;
+		int RGBFrameHeight;
+		int RGBFrameWidth;
 
 		HANDLE hDepthStreamHandle;
 		HANDLE hNextDepthFrameEvent;
@@ -55,7 +60,6 @@ namespace KTM{
 		USHORT* getDepthFromKinectStream();
 		bool getDepthAndColorFromKinectStream(USHORT* depth, char* color);
 		char* getColorFromKinectStream();
-
 	public:
 		KinectWrapper();
 		~KinectWrapper();
@@ -73,8 +77,18 @@ namespace KTM{
 		bool releaseOutFile();
 		bool releaseInFile();
 		bool streamFromFile(char*);
+
+		/* TODO: Remove! Replaced by setters and getters for resolution */
 		int getFrameWidth(){ return depthFrameWidth; };
 		int getFrameHeight(){ return depthFrameHeight; };
+
+		/* Setters and getters for resolutions */
+		bool setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode);
+		bool setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode);
+		NUI_IMAGE_RESOLUTION getRGBResolutionCode();
+		NUI_IMAGE_RESOLUTION getDepthResolutionCode();
+		void getRGBResolution(int &width, int &height);
+		void getDepthResolution(int &width, int &height);
 	};
 };
 #endif
