@@ -5,14 +5,42 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KTMKinectRecorder", "KTMKin
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug - VS2012|Itanium = Debug - VS2012|Itanium
+		Debug - VS2012|Win32 = Debug - VS2012|Win32
+		Debug - VS2012|Win32 - VS2010 = Debug - VS2012|Win32 - VS2010
+		Debug|Itanium = Debug|Itanium
 		Debug|Win32 = Debug|Win32
+		Debug|Win32 - VS2010 = Debug|Win32 - VS2010
+		Release - VS2012|Itanium = Release - VS2012|Itanium
+		Release - VS2012|Win32 = Release - VS2012|Win32
+		Release - VS2012|Win32 - VS2010 = Release - VS2012|Win32 - VS2010
+		Release|Itanium = Release|Itanium
 		Release|Win32 = Release|Win32
+		Release|Win32 - VS2010 = Release|Win32 - VS2010
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug - VS2012|Itanium.ActiveCfg = Debug - VS2012|Itanium
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug - VS2012|Itanium.Build.0 = Debug - VS2012|Itanium
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug - VS2012|Win32.ActiveCfg = Debug - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug - VS2012|Win32.Build.0 = Debug - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug - VS2012|Win32 - VS2010.ActiveCfg = Debug - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Itanium.ActiveCfg = Debug|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Itanium.Build.0 = Debug|Win32
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Win32.ActiveCfg = Debug|Win32
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Win32.Build.0 = Debug|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Win32 - VS2010.ActiveCfg = Debug|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Debug|Win32 - VS2010.Build.0 = Debug|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Itanium.ActiveCfg = Release - VS2012|Itanium
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Itanium.Build.0 = Release - VS2012|Itanium
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Win32.ActiveCfg = Release - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Win32.Build.0 = Release - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Win32 - VS2010.ActiveCfg = Release - VS2012|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Itanium.ActiveCfg = Release|Itanium
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Itanium.Build.0 = Release|Itanium
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32.ActiveCfg = Release|Win32
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32.Build.0 = Release|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32 - VS2010.ActiveCfg = Release|Win32
+		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32 - VS2010.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
