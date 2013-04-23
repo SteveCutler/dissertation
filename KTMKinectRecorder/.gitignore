@@ -1,3 +1,4 @@
 *.aps
 output/
 /Debug/
+/Release/
