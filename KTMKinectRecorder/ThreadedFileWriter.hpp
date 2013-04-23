@@ -44,6 +44,7 @@ namespace KTM{
 	public:
 		bool init();
 		bool setOutFile(char* filePath);
+		bool flush();
 		bool releaseOutFile();
 		bool write(char* data, long size);
 		bool writeBlank(long size);

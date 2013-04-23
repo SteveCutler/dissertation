@@ -4,6 +4,7 @@ bool KTM::ThreadedFileWriter::init(){
 	dataQueueMutex = PTHREAD_MUTEX_INITIALIZER;
 	outFileMutex = PTHREAD_MUTEX_INITIALIZER;
 	writeProcessActive = false;
+	outFile = NULL;
 	return true;
 }
 
@@ -56,10 +57,16 @@ bool KTM::ThreadedFileWriter::setOutFile(char* filePath){
 		return true;
 }
 
-bool KTM::ThreadedFileWriter::releaseOutFile(){
+bool KTM::ThreadedFileWriter::isWriting(){
+	return writeProcessActive;
+}
+
+bool KTM::ThreadedFileWriter::flush(){
+	if(!writeProcessActive)
+		return true;
+
 	bool queueEmpty = false;
 	KTM::NotificationInterface::setMessage(L"Waiting for file output to finish...");
-	
 	while(!queueEmpty){
 		pthread_mutex_lock(&dataQueueMutex);
 		int s = dataQueue.size();
@@ -68,10 +75,17 @@ bool KTM::ThreadedFileWriter::releaseOutFile(){
 		KTM::NotificationInterface::setMessage((wchar_t*)ss.str().c_str());
 		queueEmpty = dataQueue.empty();
 		pthread_mutex_unlock(&dataQueueMutex);
-		Sleep(500);
+		Sleep(100);
 	}
 
 	writeProcessActive = false;
+	pthread_join(writeProcessThread, NULL);
+}
+
+bool KTM::ThreadedFileWriter::releaseOutFile(){
+	if(NULL == outFile)
+		return true;
+	flush();
 
 	KTM::NotificationInterface::setMessage(L"Closing file...");
 	pthread_mutex_lock(&outFileMutex);
@@ -80,8 +94,6 @@ bool KTM::ThreadedFileWriter::releaseOutFile(){
 		outFile = NULL;
 	}
 	pthread_mutex_unlock(&outFileMutex);
-
-	pthread_join(writeProcessThread, NULL);
 
 	KTM::NotificationInterface::setMessage(L"File output complete!");
 	return NULL == outFile;
@@ -98,18 +110,18 @@ void* KTM::ThreadedFileWriter::writeProcess(void* threadArgs){
 		}
 		int size = dataQueue.size();
 		KTM::DataToWrite entry = dataQueue.front();
-		char* data = entry.data;
+		char* data;
+		data = entry.data;
+		
 		pthread_mutex_unlock(&dataQueueMutex);
 
 		pthread_mutex_lock(&outFileMutex);
-		if(NULL != outFile){
+		if(NULL != outFile && NULL != data){
 			if(outFile->is_open()){
 				outFile->write(data, entry.size);
 				outFile->flush();
 			}
 		}
-
-//		delete data;
 
 		pthread_mutex_unlock(&outFileMutex);
 

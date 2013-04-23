@@ -10,6 +10,7 @@
 #define IMAGE_RENDERER_H
 
 #include <d2d1.h>
+#include "NotificationInterface.hpp"
 
 class ImageRenderer
 {

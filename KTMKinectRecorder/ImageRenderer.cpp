@@ -1,15 +1,5 @@
-//------------------------------------------------------------------------------
-// <copyright file="ImageRenderer.cpp" company="Microsoft">
-//     Copyright (c) Microsoft Corporation.  All rights reserved.
-// </copyright>
-//------------------------------------------------------------------------------
-
-//#include "stdafx.h"
 #include "ImageRenderer.hpp"
 
-/// <summary>
-/// Constructor
-/// </summary>
 ImageRenderer::ImageRenderer() : 
     m_hWnd(0),
     m_sourceWidth(0),
@@ -21,9 +11,6 @@ ImageRenderer::ImageRenderer() :
 {
 }
 
-/// <summary>
-/// Destructor
-/// </summary>
 ImageRenderer::~ImageRenderer()
 {
     DiscardResources();
@@ -33,10 +20,6 @@ ImageRenderer::~ImageRenderer()
 	}
 }
 
-/// <summary>
-/// Ensure necessary Direct2d resources are created
-/// </summary>
-/// <returns>indicates success or failure</returns>
 HRESULT ImageRenderer::EnsureResources()
 {
     HRESULT hr = S_OK;
@@ -168,7 +151,10 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
     // Copy the image that was passed in into the direct2d bitmap
     hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceStride);
 
-	delete[] rgbaData;
+	if(NULL != rgbaData){
+		delete[] rgbaData;
+		rgbaData = NULL;
+	}
 
     if ( FAILED(hr) )
     {
@@ -216,19 +202,26 @@ HRESULT ImageRenderer::DrawRGB(char* pImage, unsigned long cbImage){
     // Copy the image that was passed in into the direct2d bitmap
     hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceStride);
 
-	delete[] rgbaData;
+	if(NULL != rgbaData){
+		delete[] rgbaData;
+		rgbaData = NULL;
+	}
 
     if ( FAILED(hr) )
     {
         return hr;
     }
-       
+    
+	try{
     m_pRenderTarget->BeginDraw();
 
     // Draw the bitmap stretched to the size of the window
     m_pRenderTarget->DrawBitmap(m_pBitmap);
             
     hr = m_pRenderTarget->EndDraw();
+	}catch(...){
+		KTM::NotificationInterface::setMessage(L"Failed...");
+	}
 
     // Device lost, need to recreate the render target
     // We'll dispose it now and retry drawing

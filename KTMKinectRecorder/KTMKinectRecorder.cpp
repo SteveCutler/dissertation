@@ -109,20 +109,30 @@ int KinectRecorder::Run(HINSTANCE hInstance, int nCmdShow){
 /// Main processing function
 /// </summary>
 void KinectRecorder::Update(){
+	try{
 	USHORT* depthData = NULL;
 	char* RGBData = NULL;
 
 	int width;
 	int height;
-
+	
+	
 	if(NULL != kinect){
+		
 		kinect->nextFrame(depthData, RGBData);
 
+		
 		kinect->getDepthResolution(width, height);
 		m_pDrawDepth->DrawDepth(depthData, width * height);
 
+		
 		kinect->getRGBResolution(width, height);
 		m_pDrawRGB->DrawRGB(RGBData, width * height * 4);
+
+
+	}
+	}catch(...){
+		KTM::NotificationInterface::setMessage(L"Exception thrown in update!");
 	}
 }
 
@@ -235,6 +245,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_KINECT), TRUE);
 				enableResolutionButtons(false);
+				kinect->releaseOutFile();
 				SetStatusMessage(L"Disconnecting Kinect...");
 				kinect->disconnectDevice();
 				std::string fp = getFilePath();
@@ -282,7 +293,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
             }
 
             if (ID_MENU_FILE_SETRECORDFILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
-				std::string fp = getFilePath();
+				std::string fp = getFilePath(L"Save As...");
 				if(kinect->setOutFile((char*)fp.c_str())){
 					if(kinect->isConnected())
 						EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
@@ -334,7 +345,6 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 			if(IDC_BUTTON_RECORD_STOP == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				SetStatusMessage(L"Recording stopped...");
 				kinect->record(false);
-				kinect->releaseOutFile();
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_START), TRUE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_RECORD_STOP), FALSE);
 				EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_FILE), TRUE);
@@ -356,7 +366,7 @@ void KinectRecorder::SetStatusMessage(WCHAR * szMessage)
 	KTM::NotificationInterface::setMessage(szMessage);
 }
 
-std::string KinectRecorder::getFilePath(){
+std::string KinectRecorder::getFilePath(wchar_t* dialogTitle){
 	OPENFILENAME ofn;
 	wchar_t fileName[MAX_PATH];
 	char fileNameC[MAX_PATH] = "";
@@ -370,6 +380,7 @@ std::string KinectRecorder::getFilePath(){
 	ofn.nMaxFile = MAX_PATH;
 	ofn.Flags = OFN_EXPLORER;
 	ofn.lpstrDefExt = L"";
+	ofn.lpstrTitle = dialogTitle;
 
 	std::string fileNameStr;
 
@@ -380,6 +391,10 @@ std::string KinectRecorder::getFilePath(){
 	fileNameStr = fileNameC;
 
 	return fileNameStr;
+}
+
+std::string KinectRecorder::getFilePath(){
+	return getFilePath(L"Open...");
 }
 
 void KinectRecorder::changeRGBResolution(NUI_IMAGE_RESOLUTION resolutionCode){
@@ -425,7 +440,8 @@ void KinectRecorder::resetDepthImageRenderer(){
 
 	kinect->getDepthResolution(width, height);
 
-	delete m_pDrawDepth;
+	if(NULL != m_pDrawDepth)
+		delete m_pDrawDepth;
 	m_pDrawDepth = new ImageRenderer();
 	HRESULT hr = m_pDrawDepth->Initialize(GetDlgItem(m_hWnd, IDC_DEPTH_VIEW), m_pD2DFactory, width, height, width * sizeof(ULONG));
     if (FAILED(hr))
@@ -438,7 +454,9 @@ void KinectRecorder::resetRGBImageRenderer(){
 
 	kinect->getRGBResolution(width, height);
 
-	delete m_pDrawRGB;
+	if(NULL != m_pDrawRGB){
+		delete m_pDrawRGB;
+	}
 	m_pDrawRGB = new ImageRenderer();
 	HRESULT hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, width, height, width * 4 * sizeof(UCHAR));
     if (FAILED(hr))

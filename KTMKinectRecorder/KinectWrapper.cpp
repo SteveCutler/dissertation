@@ -7,6 +7,7 @@ KTM::KinectWrapper::KinectWrapper() :
 	hNextColorFrameEvent(NULL),
 	recordEnable(false),
 	outFileReady(false),
+	outFileName(NULL),
 	recordStartTime(0)
 {
 	mRGBDataHeap = NULL;
@@ -19,8 +20,15 @@ KTM::KinectWrapper::KinectWrapper() :
 KTM::KinectWrapper::~KinectWrapper(){
 	disconnectDevice();
 
-    delete[] mDepthDataHeap;
-	delete[] mRGBDataHeap;
+	if(NULL != mDepthDataHeap){
+		delete[] mDepthDataHeap;
+		mDepthDataHeap = NULL;
+	}
+
+	if(NULL != mRGBDataHeap){
+		delete[] mRGBDataHeap;
+		mRGBDataHeap = NULL;
+	}
 }
 
 HRESULT KTM::KinectWrapper::streamFromKinect(){
@@ -114,6 +122,9 @@ bool KTM::KinectWrapper::setOutFile(char* fileName){
 
 bool KTM::KinectWrapper::setOutFile(char* fileName, char* c){
 	outFileReady = fileWriter.setOutFile(fileName);
+	int fileLen = strlen(fileName) + 1;
+	outFileName = new char[fileLen];
+	memcpy(outFileName, fileName, fileLen); 
 	return outFileReady;
 }
 
@@ -123,7 +134,14 @@ bool KTM::KinectWrapper::hasOutFile(){
 
 void KTM::KinectWrapper::record(bool r){
 	recordEnable = r;
+	if(NULL == outFileName)
+		return;
+
 	if(recordEnable){
+		if(!fileWriter.isWriting()){
+			fileWriter.setOutFile(outFileName);
+		}
+
 		recordStartTime = timeGetTime();
 		if(hasDepth){
 			fileWriter.write("DEPTH", 5);
@@ -142,12 +160,14 @@ void KTM::KinectWrapper::record(bool r){
 				fileWriter.write("640X480 ", 8);
 		}
 	}else{
+		fileWriter.flush();
 		recordStartTime = 0;
 	}
 }
 
 bool KTM::KinectWrapper::releaseOutFile(){
 	fileWriter.releaseOutFile();
+
 	return true;
 }
 
@@ -312,18 +332,26 @@ USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
 
 	char* type = new char[6];
 	inFile.read(type, 5);
-	type[5] = '\0';
-	if(strcmp(type, "DEPTH") != 0){
-		inFile.seekg(-5, 0);
+	if(NULL != type){
+		type[5] = '\0';
+		if(strcmp(type, "DEPTH") != 0){
+			inFile.seekg(-5, 0);
+			delete type;
+			return NULL;
+		}
 		delete type;
-		return NULL;
+	}else{
+		throw "No type info for frame!";
 	}
-	delete type;
 
 	long* t = new long[1];
 	inFile.read((char*)t, sizeof(long));
-	frameTime = t[0];
-	delete t;
+	if(t != NULL){
+		frameTime = t[0];
+		delete t;
+	}else{
+		throw "No time code for frame!";
+	}
 
 	int frameSize = depthFrameWidth * depthFrameHeight * sizeof(unsigned short);
 	if(!inFile.is_open())
@@ -340,18 +368,26 @@ USHORT* KTM::KinectWrapper::getDepthFromFileStream(long &frameTime){
 char* KTM::KinectWrapper::getRGBAFromFileStream(long &frameTime){
 	char* type = new char[6];
 	inFile.read(type, 5);
-	type[5] = '\0';
-	if(strcmp(type, "RGB  ") != 0){
-		inFile.seekg(-5, 0);
+	if(NULL != type){
+		type[5] = '\0';
+		if(strcmp(type, "RGB  ") != 0){
+			inFile.seekg(-5, 0);
+			delete type;
+			return NULL;
+		}
 		delete type;
-		return NULL;
+	}else{
+		throw "No type info for frame!";
 	}
-	delete type;
 
 	long* t = new long[1];
 	inFile.read((char*)t, sizeof(long));
-	frameTime = t[0];
-	delete t;
+	if(t != NULL){
+		frameTime = t[0];
+		delete t;
+	}else{
+		throw "No time code for frame!";
+	}
 
 	char* frameData = mRGBDataHeap;
 	int frameSize = RGBFrameHeight * RGBFrameWidth * 4 * sizeof(unsigned char);
@@ -488,8 +524,10 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
 		break;
 	}
 
-	if(NULL != mDepthDataHeap)
+	if(NULL != mDepthDataHeap){
 		delete[] mDepthDataHeap;
+		mDepthDataHeap = NULL;
+	}
 	mDepthDataHeap = new USHORT[depthFrameHeight*depthFrameWidth];
 }
 
@@ -515,8 +553,10 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 		break;
 	}
 
-	if(NULL != mRGBDataHeap)
+	if(NULL != mRGBDataHeap){
 		delete[] mRGBDataHeap;
+		mRGBDataHeap = NULL;
+	}
 	mRGBDataHeap = new char[RGBFrameHeight * RGBFrameWidth * 4];
 }
 

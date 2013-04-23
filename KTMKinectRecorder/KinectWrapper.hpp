@@ -26,6 +26,7 @@ namespace KTM{
 
 	class KinectWrapper{
 	private:
+		char* outFileName;
 		bool outFileReady;
 		bool recordEnable;
 		bool streamingFromFile;
@@ -40,7 +41,7 @@ namespace KTM{
 		NUI_IMAGE_RESOLUTION depthResolutionCode;
 		int depthFrameWidth;
 		int depthFrameHeight;
-
+		
 		bool hasRGB;
 		NUI_IMAGE_RESOLUTION RGBResolutionCode;
 		int RGBFrameHeight;
