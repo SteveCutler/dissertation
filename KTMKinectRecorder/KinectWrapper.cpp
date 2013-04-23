@@ -178,6 +178,9 @@ bool KTM::KinectWrapper::releaseInFile(){
 }
 
 HRESULT KTM::KinectWrapper::connectDevice(){
+	if(isConnected())
+		disconnectDevice();
+
     INuiSensor * pTmpKinectSensor;
     HRESULT hr;
 
@@ -206,6 +209,7 @@ HRESULT KTM::KinectWrapper::connectDevice(){
 
     if (NULL != pKinectSensor){
         // Initialize the Kinect and specify that we'll be using depth
+
 		hr = pKinectSensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR | NUI_INITIALIZE_FLAG_USES_DEPTH);
         if (SUCCEEDED(hr)){
             // Create an event that will be signaled when depth data is available
@@ -503,11 +507,11 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
 		return false;
 
 	depthResolutionCode = NUIAPICode;
-	if(isConnected()){
-		disconnectDevice();
-		if(FAILED(connectDevice()))
-			return false;
-	}
+	//if(isConnected()){
+	//	disconnectDevice();
+	//	if(FAILED(connectDevice()))
+	//		return false;
+	//}
 
 	switch(depthResolutionCode){
 	case NUI_IMAGE_RESOLUTION_640x480:
@@ -529,6 +533,17 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
 		mDepthDataHeap = NULL;
 	}
 	mDepthDataHeap = new USHORT[depthFrameHeight*depthFrameWidth];
+
+	if(isConnected()){
+		pKinectSensor->NuiImageStreamOpen(
+			NUI_IMAGE_TYPE_DEPTH,
+			depthResolutionCode,
+            0,
+            NUI_IMAGE_STREAM_FRAME_LIMIT_MAXIMUM,
+            hNextDepthFrameEvent,
+            &hDepthStreamHandle
+		);
+	}
 }
 
 bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode){
@@ -536,11 +551,11 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 		return false;
 
 	RGBResolutionCode = NUIAPICode;
-	if(isConnected()){
-		disconnectDevice();
-		if(FAILED(connectDevice()))
-			return false;
-	}
+	//if(isConnected()){
+	//	disconnectDevice();
+	//	if(FAILED(connectDevice()))
+	//		return false;
+	//}
 
 	switch(RGBResolutionCode){
 	case NUI_IMAGE_RESOLUTION_1280x960:
@@ -558,6 +573,17 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 		mRGBDataHeap = NULL;
 	}
 	mRGBDataHeap = new char[RGBFrameHeight * RGBFrameWidth * 4];
+
+	if(isConnected()){
+		pKinectSensor->NuiImageStreamOpen(
+			NUI_IMAGE_TYPE_COLOR,
+            RGBResolutionCode,
+            0,
+            NUI_IMAGE_STREAM_FRAME_LIMIT_MAXIMUM,
+            hNextColorFrameEvent,
+            &hColorStreamHandle
+		);
+	}
 }
 
 NUI_IMAGE_RESOLUTION KTM::KinectWrapper::getRGBResolutionCode(){
