@@ -1,15 +1,24 @@
 classdef KTMMatlabRead
     properties
         hasDepth = 0
-        depthWidth
-        depthHeight
+        depthWidth = 0
+        depthHeight = 0
         
-        hasRGB
-        RGBWidth
-        RGBHeight
+        hasRGB = 0
+        RGBWidth = 0
+        RGBHeight = 0
+        EOF = 1
+    end
+    properties(SetAccess = private)
+        dataStart = 0
+        depthFrameDataSize = 0
+        RGBFrameDataSize = 0
+        totalFrameDataSize = 0
+        frames = 0
+        currentFrame = 0
     end
     methods
-        function obj = readFile(obj, filePath)
+        function obj = openFile(obj, filePath)
             obj.hasDepth = 0;
             obj.depthWidth = 0;
             obj.depthHeight = 0;
@@ -33,10 +42,10 @@ classdef KTMMatlabRead
                     obj.depthWidth = 640;
                     obj.depthHeight = 480;
                 end
-                disp(sprintf('Depth stream: %i x %i', obj.depthWidth, obj.depthHeight))
+                fprintf('Depth stream: %i x %i\n', obj.depthWidth, obj.depthHeight)
             else
                 fseek(file,-5,'cof');
-                disp('Has no Depth Stream')
+                fprintf('Has no Depth Stream\n')
             end
 
 
@@ -51,11 +60,21 @@ classdef KTMMatlabRead
                     obj.RGBWidth = 1290;
                     obj.RGBHeight = 960;
                 end
-                disp(sprintf('RGB stream: %i x %i', obj.RGBWidth, obj.RGBHeight))
+                fprintf('RGB stream: %i x %i\n', obj.RGBWidth, obj.RGBHeight)
             else
                 fseek(file,-5,'cof');
-                disp('Has no RGB stream.')
+                fprintf('Has no RGB stream.\n')
             end
+            
+            obj.dataStart = ftell(file);
+            obj.depthFrameDataSize = (4 + 5 + (obj.depthWidth * obj.depthHeight * 2)) * obj.hasDepth;
+            obj.RGBFrameDataSize = (4 + 5 + (obj.RGBWidth * obj.RGBHeight * 4)) * obj.hasRGB;
+            obj.totalFrameDataSize = obj.depthFrameDataSize + obj.RGBFrameDataSize;;
+            fseek(file,0,'eof');
+            dataEnd = ftell(file);
+            dataSize = dataEnd - obj.dataStart;
+            obj.frames = dataSize / obj.totalFrameDataSize;
+            fprintf('Total frames: %i\n', obj.frames);
         end
     end
 end
