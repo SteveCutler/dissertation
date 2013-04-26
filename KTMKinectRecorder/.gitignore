@@ -1,4 +1,6 @@
 *.aps
 output/
 /Debug/
+/Debug - VS2012/
 /Release/
+/Release - VS2012/

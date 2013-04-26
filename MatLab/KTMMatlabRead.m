@@ -1,48 +1,61 @@
-
-
-function [] = readFile()
-hasDepth = 0;
-depthWidth = 0;
-depthHeight = 0;
-
-hasRGB = 0;
-RGBWidth = 0;
-RGBHeight = 0;
-
-file = fopen('C:\Users\ganterd\Desktop\Dissertation\KTMKinectRecorder\output\saved.bin');
-fileInfo = char(fread(file,5)).'
-hasDepth = strcmp(fileInfo, 'DEPTH');
-if(hasDepth)
-    fileInfo = char(fread(file,8)).'
-    if(strcmp(fileInfo,'80X60   '))
-        depthWidth = 80;
-        depthHeight = 60;
-    elseif(strcmp(fileInfo,'320X240 '))
-        depthWidth = 320;
-        depthHeight = 240;
-    elseif(strcmp(fileInfo,'640X480 '))
-        depthWidth = 640;
-        depthHeight = 480;
+classdef KTMMatlabRead
+    properties
+        hasDepth = 0
+        depthWidth
+        depthHeight
+        
+        hasRGB
+        RGBWidth
+        RGBHeight
     end
-else
-    fseek(file,-5,'cof')
-end
+    methods
+        function obj = readFile(obj, filePath)
+            obj.hasDepth = 0;
+            obj.depthWidth = 0;
+            obj.depthHeight = 0;
 
-    
-fileInfo = char(fread(file,5)).'
-hasRGB = strcmp(fileInfo, 'RGB  ');
-if(hasRGB)
-    fileInfo = char(fread(file,8)).'
-    if(strcmp(fileInfo,'640X480 '))
-        RGBWidth = 640;
-        RGBHeight = 480;
-    elseif(strcmp(fileInfo,'1290X960'))
-        RGBWidth = 1290;
-        RGBHeight = 960;
+            obj.hasRGB = 0;
+            obj.RGBWidth = 0;
+            obj.RGBHeight = 0;
+            %'C:\Users\ganterd\Desktop\Dissertation\KTMKinectRecorder\output\saved.bin'
+            file = fopen(filePath);
+            fileInfo = fread(file,5,'*char').';
+            obj.hasDepth = strcmp(fileInfo, 'DEPTH');
+            if(obj.hasDepth)
+                fileInfo = char(fread(file,8)).';
+                if(strcmp(fileInfo,'80X60   '))
+                    obj.depthWidth = 80;
+                    obj.depthHeight = 60;
+                elseif(strcmp(fileInfo,'320X240 '))
+                    obj.depthWidth = 320;
+                    obj.depthHeight = 240;
+                elseif(strcmp(fileInfo,'640X480 '))
+                    obj.depthWidth = 640;
+                    obj.depthHeight = 480;
+                end
+                disp(sprintf('Depth stream: %i x %i', obj.depthWidth, obj.depthHeight))
+            else
+                fseek(file,-5,'cof');
+                disp('Has no Depth Stream')
+            end
+
+
+            fileInfo = fread(file,5,'*char').';
+            obj.hasRGB = strcmp(fileInfo, 'RGB  ');
+            if(obj.hasRGB)
+                fileInfo = char(fread(file,8)).';
+                if(strcmp(fileInfo,'640X480 '))
+                    obj.RGBWidth = 640;
+                    obj.RGBHeight = 480;
+                elseif(strcmp(fileInfo,'1280X960'))
+                    obj.RGBWidth = 1290;
+                    obj.RGBHeight = 960;
+                end
+                disp(sprintf('RGB stream: %i x %i', obj.RGBWidth, obj.RGBHeight))
+            else
+                fseek(file,-5,'cof');
+                disp('Has no RGB stream.')
+            end
+        end
     end
-else
-    fseek(file,-5,'cof')
-end
-
-
 end

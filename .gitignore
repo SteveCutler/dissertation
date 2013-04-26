@@ -3,3 +3,4 @@
 *.suo
 ipch/
 enc_temp_folder/
+*.vsp
