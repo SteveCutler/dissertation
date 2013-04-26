@@ -127,7 +127,7 @@ void KinectRecorder::Update(){
 
 		
 		kinect->getRGBResolution(width, height);
-		m_pDrawRGB->DrawRGB(RGBData, width * height * 4);
+		m_pDrawRGB->DrawRGB(RGBData, width * height * OUT_FRAME_CHANNELS);
 
 
 	}
@@ -198,7 +198,7 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
             if (FAILED(hr))
                 SetStatusMessage(L"Failed to initialize the Depth draw device.");
 
-			hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, RGBA_FRAME_WIDTH, RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH * 4 * sizeof(UCHAR));
+			hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, RGBA_FRAME_WIDTH, RGBA_FRAME_HEIGHT, RGBA_FRAME_WIDTH * OUT_FRAME_CHANNELS * sizeof(UCHAR));
             if (FAILED(hr))
                 SetStatusMessage(L"Failed to initialize the RGB draw device.");
 
@@ -458,7 +458,7 @@ void KinectRecorder::resetRGBImageRenderer(){
 		delete m_pDrawRGB;
 	}
 	m_pDrawRGB = new ImageRenderer();
-	HRESULT hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, width, height, width * 4 * sizeof(UCHAR));
+	HRESULT hr = m_pDrawRGB->Initialize(GetDlgItem(m_hWnd, IDC_RGB_VIEW), m_pD2DFactory, width, height, width * OUT_FRAME_CHANNELS * sizeof(UCHAR));
     if (FAILED(hr))
         SetStatusMessage(L"Failed to initialize the RGB draw device.");
 }

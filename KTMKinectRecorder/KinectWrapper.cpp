@@ -318,7 +318,7 @@ void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 		if(NULL != RGBdata && hasRGB){
 			fileWriter.write("RGB  ", 5);
 			fileWriter.write((char*)new long(timeSinceStart), sizeof(long));
-			fileWriter.write(RGBdata, RGBFrameWidth * RGBFrameHeight * 4 * sizeof(unsigned char));
+			fileWriter.write(RGBdata, RGBFrameWidth * RGBFrameHeight * OUT_FRAME_CHANNELS * sizeof(unsigned char));
 		}
 	}
 
@@ -394,7 +394,7 @@ char* KTM::KinectWrapper::getRGBAFromFileStream(long &frameTime){
 	}
 
 	char* frameData = mRGBDataHeap;
-	int frameSize = RGBFrameHeight * RGBFrameWidth * 4 * sizeof(unsigned char);
+	int frameSize = RGBFrameHeight * RGBFrameWidth * OUT_FRAME_CHANNELS * sizeof(unsigned char);
 	if(!inFile.is_open())
 		return NULL;
 
@@ -489,8 +489,16 @@ char* KTM::KinectWrapper::getColorFromKinectStream(){
 		/* to the frame end                                         */
         const char* pBufferRun = (const char*)lockedRect.pBits;
         const char* pBufferEnd = pBufferRun + (RGBFrameWidth * RGBFrameHeight * 4);
-
-		memcpy(mFrameData, pBufferRun, pBufferEnd - pBufferRun);
+		if(OUT_FRAME_CHANNELS == 4){
+			memcpy(mFrameData, pBufferRun, pBufferEnd - pBufferRun);
+		}else{
+			int s = pBufferEnd - pBufferRun;
+			for(int i = 0, j = 0; i < s; i++){
+				mFrameData[j++] = pBufferRun[i++];
+				mFrameData[j++] = pBufferRun[i++];
+				mFrameData[j++] = pBufferRun[i++];
+			}
+		}
     }
 
     /* Unlock the rectangle and release the frame */
@@ -507,11 +515,6 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
 		return false;
 
 	depthResolutionCode = NUIAPICode;
-	//if(isConnected()){
-	//	disconnectDevice();
-	//	if(FAILED(connectDevice()))
-	//		return false;
-	//}
 
 	switch(depthResolutionCode){
 	case NUI_IMAGE_RESOLUTION_640x480:
@@ -551,11 +554,6 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 		return false;
 
 	RGBResolutionCode = NUIAPICode;
-	//if(isConnected()){
-	//	disconnectDevice();
-	//	if(FAILED(connectDevice()))
-	//		return false;
-	//}
 
 	switch(RGBResolutionCode){
 	case NUI_IMAGE_RESOLUTION_1280x960:
@@ -572,7 +570,7 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
 		delete[] mRGBDataHeap;
 		mRGBDataHeap = NULL;
 	}
-	mRGBDataHeap = new char[RGBFrameHeight * RGBFrameWidth * 4];
+	mRGBDataHeap = new char[RGBFrameHeight * RGBFrameWidth * OUT_FRAME_CHANNELS];
 
 	if(isConnected()){
 		pKinectSensor->NuiImageStreamOpen(

@@ -149,7 +149,7 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
     }
     
     // Copy the image that was passed in into the direct2d bitmap
-    hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceStride);
+    hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceWidth * 4);
 
 	if(NULL != rgbaData){
 		delete[] rgbaData;
@@ -183,8 +183,17 @@ HRESULT ImageRenderer::DrawDepth(USHORT* pImage, unsigned long cbImage){
 HRESULT ImageRenderer::DrawRGB(char* pImage, unsigned long cbImage){
 	char* rgbaData = new char[m_sourceWidth * m_sourceHeight * 4];
 	if(NULL != pImage){
-		for(unsigned int i = 0; i < cbImage;i++){
-			rgbaData[i] = pImage[i];
+		if(OUT_FRAME_CHANNELS == 4){
+			//for(unsigned int i = 0; i < cbImage;i++){
+			//	rgbaData[i] = pImage[i];
+			//}
+			memcpy(rgbaData,pImage,cbImage);
+		}else{
+			for(unsigned int i = 0, j = 0; j < cbImage;i++){
+				rgbaData[i++] = pImage[j++];
+				rgbaData[i++] = pImage[j++];
+				rgbaData[i++] = pImage[j++];
+			}
 		}
 	}else{
 		ZeroMemory(rgbaData, m_sourceWidth * m_sourceHeight * 4);
@@ -200,7 +209,7 @@ HRESULT ImageRenderer::DrawRGB(char* pImage, unsigned long cbImage){
     }
     
     // Copy the image that was passed in into the direct2d bitmap
-    hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceStride);
+    hr = m_pBitmap->CopyFromMemory(NULL, rgbaData, m_sourceWidth * 4);
 
 	if(NULL != rgbaData){
 		delete[] rgbaData;
