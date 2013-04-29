@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KTMKinectRecorder", "KTMKinectRecorder\KTMKinectRecorder.vcxproj", "{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KTMMeshCreator", "KTMMeshCreator\KTMMeshCreator.vcxproj", "{C9A0713B-C332-4CB1-83A8-D700FA671BA5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug - VS2012|Win32 = Debug - VS2012|Win32
@@ -19,6 +21,14 @@ Global
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release - VS2012|Win32.Build.0 = Release - VS2012|Win32
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32.ActiveCfg = Release|Win32
 		{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}.Release|Win32.Build.0 = Release|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Debug - VS2012|Win32.ActiveCfg = Debug|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Debug - VS2012|Win32.Build.0 = Debug|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Debug|Win32.Build.0 = Debug|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Release - VS2012|Win32.ActiveCfg = Release|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Release - VS2012|Win32.Build.0 = Release|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Release|Win32.ActiveCfg = Release|Win32
+		{C9A0713B-C332-4CB1-83A8-D700FA671BA5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

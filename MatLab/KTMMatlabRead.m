@@ -9,6 +9,7 @@ classdef KTMMatlabRead
         RGBHeight = 0
         EOF = 1
         currentFrame = 1
+        frames = 0
     end
     properties(SetAccess = private)
         file = 0
@@ -17,7 +18,6 @@ classdef KTMMatlabRead
         depthFrameDataSize = 0
         RGBFrameDataSize = 0
         totalFrameDataSize = 0
-        frames = 0
     end
     methods
         function obj = openFile(obj, filePath)
