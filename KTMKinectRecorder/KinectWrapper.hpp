@@ -82,6 +82,9 @@ namespace KTM{
 		bool streamFromFile(char*);
 		void skipFileInfo();
 
+		void tiltUp();
+		void tiltDown();
+
 		/* TODO: Remove! Replaced by setters and getters for resolution */
 		int getFrameWidth(){ return depthFrameWidth; };
 		int getFrameHeight(){ return depthFrameHeight; };

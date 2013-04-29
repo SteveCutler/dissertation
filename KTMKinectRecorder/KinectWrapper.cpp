@@ -271,6 +271,26 @@ void KTM::KinectWrapper::setNearMode(bool t){
 		pKinectSensor->NuiImageStreamSetImageFrameFlags(hDepthStreamHandle, t ? NUI_IMAGE_STREAM_FLAG_ENABLE_NEAR_MODE : 0);
 }
 
+void KTM::KinectWrapper::tiltUp(){
+	long angle = 0;
+	NuiCameraElevationGetAngle(&angle);
+	if(angle < NUI_CAMERA_ELEVATION_MAXIMUM)
+		angle += 10;
+		if(angle > NUI_CAMERA_ELEVATION_MAXIMUM)
+			angle = NUI_CAMERA_ELEVATION_MAXIMUM;
+		NuiCameraElevationSetAngle(angle + 1);
+}
+
+void KTM::KinectWrapper::tiltDown(){
+	long angle = 0;
+	NuiCameraElevationGetAngle(&angle);
+	if(angle > NUI_CAMERA_ELEVATION_MINIMUM)
+		angle -= 10;
+		if(angle < NUI_CAMERA_ELEVATION_MINIMUM)
+			angle = NUI_CAMERA_ELEVATION_MINIMUM;
+		NuiCameraElevationSetAngle(angle - 1);
+}
+
 void KTM::KinectWrapper::nextFrame(USHORT* &outDepthData, char* &outRGBData){
 	USHORT* depthData = NULL;
 	char* RGBdata = NULL;

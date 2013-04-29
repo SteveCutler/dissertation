@@ -292,6 +292,14 @@ LRESULT CALLBACK KinectRecorder::DlgProc(HWND hWnd, UINT message, WPARAM wParam,
 				kinect->setRecordDepth(IsDlgButtonChecked(m_hWnd, IDC_RECORD_DEPTH) == BST_CHECKED);
             }
 
+			if (IDC_BUTTON_TILT_UP == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				kinect->tiltUp();
+            }
+
+			if (IDC_BUTTON_TILT_DOWN == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
+				kinect->tiltDown();
+            }
+
             if (ID_MENU_FILE_SETRECORDFILE == LOWORD(wParam) && BN_CLICKED == HIWORD(wParam)){
 				std::string fp = getFilePath(L"Save As...");
 				if(kinect->setOutFile((char*)fp.c_str())){
@@ -472,6 +480,8 @@ void KinectRecorder::enableResolutionButtons(bool enabled){
 	EnableWindow(GetDlgItem(m_hWnd, IDC_DEPTH_RESOLUTION_80_60), e);
 	EnableWindow(GetDlgItem(m_hWnd, IDC_RECORD_RGB), e);
 	EnableWindow(GetDlgItem(m_hWnd, IDC_RECORD_DEPTH), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_TILT_UP), e);
+	EnableWindow(GetDlgItem(m_hWnd, IDC_BUTTON_TILT_DOWN), e);
 }
 
 void KinectRecorder::updateResolutionButtons(){
@@ -482,6 +492,7 @@ void KinectRecorder::updateResolutionButtons(){
 	CheckDlgButton(m_hWnd,IDC_DEPTH_RESOLUTION_80_60, BST_UNCHECKED);
 	CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_1280_960, BST_UNCHECKED);
 	CheckDlgButton(m_hWnd,IDC_RGB_RESOLUTION_640_480, BST_UNCHECKED);
+
 
 	switch(res){
 	case NUI_IMAGE_RESOLUTION_640x480:
