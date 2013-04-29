@@ -8,10 +8,12 @@ classdef KTMMatlabRead
         RGBWidth = 0
         RGBHeight = 0
         EOF = 1
+        currentFrame = 1
     end
     properties(SetAccess = private)
         file = 0
         dataStart = 0
+        frameInfoDataSize = 4 + 5
         depthFrameDataSize = 0
         RGBFrameDataSize = 0
         totalFrameDataSize = 0
@@ -67,15 +69,17 @@ classdef KTMMatlabRead
             end
             
             obj.dataStart = ftell(obj.file);
-            obj.depthFrameDataSize = (4 + 5 + (obj.depthWidth * obj.depthHeight * 2)) * obj.hasDepth;
-            obj.RGBFrameDataSize = (4 + 5 + (obj.RGBWidth * obj.RGBHeight * 3)) * obj.hasRGB;
-            obj.totalFrameDataSize = obj.depthFrameDataSize + obj.RGBFrameDataSize;;
+            obj.depthFrameDataSize = ((obj.depthWidth * obj.depthHeight * 2)) * obj.hasDepth;
+            obj.RGBFrameDataSize = ((obj.RGBWidth * obj.RGBHeight * 3)) * obj.hasRGB;
+            obj.totalFrameDataSize = (obj.frameInfoDataSize * 2) + obj.depthFrameDataSize + obj.RGBFrameDataSize;;
             fseek(obj.file,0,'eof');
             dataEnd = ftell(obj.file);
             dataSize = dataEnd - obj.dataStart;
             obj.frames = dataSize / obj.totalFrameDataSize;
             fprintf('Total frames: %i\n', obj.frames);
             fseek(obj.file,obj.dataStart,'bof');
+            obj.currentFrame = 1;
+            obj.EOF = feof(obj.file);
         end
         function [obj,outFrameTime,outDepthFrame,outRGBFrame] = nextFrame(obj)
             outDepthFrame = [];
@@ -83,30 +87,24 @@ classdef KTMMatlabRead
             outFrameTime = 0;
             
             if(obj.hasDepth)
-                frameType = fread(obj.file, 5, '*char').'
+                frameType = fread(obj.file, 5, '*char').'; % Not Used (Assuming File is Correct. I know. This is a horrible assumption, but short on time)
                 outFrameTime = fread(obj.file,1,'long');
                 
-                outDepthFrame = zeros(obj.depthHeight, obj.depthWidth, 'uint16');
-                for i=1:obj.depthHeight,
-                    outDepthFrame(i,:) = fread(obj.file,obj.depthWidth,'uint16');
-                end
+                data = fread(obj.file, obj.depthWidth * obj.depthHeight, 'uint16');
+                outDepthFrame = uint16(reshape(data,obj.depthWidth,obj.depthHeight).');
             end
             if(obj.hasRGB)
-                frameType = fread(obj.file, 5, '*char').'
+                frameType = fread(obj.file, 5, '*char').'; % Not Used (Assuming File is Correct. I know. This is a horrible assumption, but short on time)
                 outFrameTime = fread(obj.file,1,'long');
                 
-                outRGBFrame = zeros(obj.RGBHeight, obj.RGBWidth, 3, 'uint8');
-                data = fread(obj.file,obj.RGBHeight * obj.RGBWidth * 3,'uint8');
-                for i=1:obj.RGBHeight,
-                    start = 1 + ((i - 1) * obj.RGBWidth);
-                    line = data(start:start + obj.RGBWidth - 1);
-                    for j=1:obj.RGBWidth / 3,
-                        %Conversion from BGR to RGB
-                        BGR = line([j, j + 1, j + 2]);
-                        outRGBFrame(i,j,:) = fliplr(BGR);
-                    end
-                end
+                data = fread(obj.file, obj.RGBFrameDataSize, 'uint8');
+                organizedData = reshape(data,3,obj.RGBWidth,obj.RGBHeight);
+                organizedData = uint8(permute(organizedData,[3 2 1]));
+                outRGBFrame = uint8(flipdim(organizedData,3));
             end
+            
+            obj.EOF = feof(obj.file);
+            obj.currentFrame = obj.currentFrame + 1;
         end
         function [obj,positionSet] = seekFrame(obj, frameNumber)
             if(frameNumber > obj.frames || frameNumber < 1)
@@ -114,6 +112,7 @@ classdef KTMMatlabRead
                 return;
             end
             fseek(obj.file, obj.dataStart + (obj.totalFrameDataSize * (frameNumber - 1)), 'bof');
+            obj.currentFrame = 1;
             positionSet = 1;
         end
     end
