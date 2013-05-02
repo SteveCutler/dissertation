@@ -1,0 +1,30 @@
+﻿Build started 02/05/2013 14:54:47.
+     1>Project "C:\Users\ganterd\Desktop\Dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "Release\MeshCreator.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+         All outputs are up-to-date.
+       ResourceCompile:
+         All outputs are up-to-date.
+       Link:
+         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:..\KTMKinectRecorder\Release WINMM.LIB pthreadVC2.lib Kinect10.lib ThreadedFileWriter ImageRenderer KinectWrapper NotificationInterface kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\MeshCreator.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.lib" /MACHINE:X86 Release\MeshCreator.res
+         Release\MeshCreator.obj
+         Release\PCLWrapper.obj
+         Release\stdafx.obj
+         Generating code
+     1>c:\users\ganterd\desktop\dissertation\ktmkinectrecorder\kinectwrapper.cpp(605): warning C4715: 'KTM::KinectWrapper::setRGBRecordingResolution' : not all control paths return a value
+     1>c:\users\ganterd\desktop\dissertation\ktmkinectrecorder\kinectwrapper.cpp(570): warning C4715: 'KTM::KinectWrapper::setDepthRecordingResolution' : not all control paths return a value
+     1>c:\users\ganterd\desktop\dissertation\ktmkinectrecorder\threadedfilewriter.cpp(83): warning C4715: 'KTM::ThreadedFileWriter::flush' : not all control paths return a value
+         Finished generating code
+         KTMMeshCreator.vcxproj -> C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.exe
+       Manifest:
+         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.exe;#1" /manifest Release\MeshCreator.exe.intermediate.manifest
+       FinalizeBuildStatus:
+         Deleting file "Release\MeshCreator.unsuccessfulbuild".
+         Touching "Release\MeshCreator.lastbuildstate".
+     1>Done Building Project "C:\Users\ganterd\Desktop\Dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:06.25

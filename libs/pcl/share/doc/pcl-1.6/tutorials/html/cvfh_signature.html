@@ -1,0 +1,131 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Signature Estimation with Clustered Viewpoint Feature Histogram</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="None" href="index.html" />
+
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul> 
+      </ul>
+    </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body">
+            
+  <div class="section" id="signature-estimation-with-clustered-viewpoint-feature-histogram">
+<span id="cvfh-signature"></span><h1>Signature Estimation with Clustered Viewpoint Feature Histogram</h1>
+<p>In this tutorial you will see a simple implementation of estimating CVFH signatures from a given clustered point cloud. In order to use that tutorial for your own project, you first have to segment out planars and extract clusters (see <a class="reference internal" href="extract_indices.html#extract-indices"><em>Extracting indices from a PointCloud</em></a> and <a class="reference internal" href="cluster_extraction.html#cluster-extraction"><em>Euclidean Cluster Extraction</em></a>) from your original point cloud.</p>
+</div>
+<div class="section" id="the-code">
+<h1>The Code</h1>
+<p>First, go to &#8220;PCL_ROOT/test&#8221; and copy bun0.pcd to your project folder.</p>
+<p>Then, create a file, let&#8217;s say, <tt class="docutils literal"><span class="pre">cvfh_signature.cpp</span></tt> in your favorite editor, and place the following inside it:</p>
+</div>
+<div class="section" id="the-explanation">
+<h1>The Explanation</h1>
+<p>Now, let&#8217;s break down the code piece by piece, skipping the obvious.</p>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="c1">// Reading a sample pointcloud //</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="o">&gt;::</span><span class="n">Ptr</span> <span class="n">cloud</span> <span class="p">(</span><span class="k">new</span> <span class="n">pcl</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="o">&gt;</span><span class="p">);</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">PCDReader</span> <span class="n">reader</span><span class="p">;</span>
+    <span class="n">reader</span><span class="p">.</span><span class="n">read</span><span class="p">(</span><span class="s">&quot;bun0.pcd&quot;</span><span class="p">,</span><span class="o">*</span><span class="n">cloud</span><span class="p">);</span>
+
+    <span class="c1">// Computing the normals of the pointcloud for the CVFH estimation //</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">NormalEstimation</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="p">,</span> <span class="n">pcl</span><span class="o">::</span><span class="n">PointNormal</span><span class="o">&gt;</span> <span class="n">n</span><span class="p">;</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointNormal</span><span class="o">&gt;::</span><span class="n">Ptr</span> <span class="n">normals</span> <span class="p">(</span><span class="k">new</span> <span class="n">pcl</span><span class="o">::</span><span class="n">PointCloud</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointNormal</span><span class="o">&gt;</span><span class="p">);</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">KdTree</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="o">&gt;::</span><span class="n">Ptr</span> <span class="n">tree</span> <span class="p">(</span><span class="k">new</span> <span class="n">pcl</span><span class="o">::</span><span class="n">KdTreeFLANN</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="o">&gt;</span><span class="p">);</span>
+    <span class="n">tree</span><span class="o">-&gt;</span><span class="n">setInputCloud</span><span class="p">(</span><span class="n">cloud</span><span class="p">);</span>
+    <span class="n">n</span><span class="p">.</span><span class="n">setInputCloud</span> <span class="p">(</span><span class="n">cloud</span><span class="p">);</span>
+    <span class="n">n</span><span class="p">.</span><span class="n">setSearchMethod</span> <span class="p">(</span><span class="n">tree</span><span class="p">);</span>
+    <span class="n">n</span><span class="p">.</span><span class="n">setKSearch</span> <span class="p">(</span><span class="mi">20</span><span class="p">);</span>
+    <span class="n">n</span><span class="p">.</span><span class="n">compute</span> <span class="p">(</span><span class="o">*</span><span class="n">normals</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>The code above are already explained in other tutorials. So if you have questions regarding to these, just have a look into the other
+tutorials.</p>
+<div class="highlight-cpp"><div class="highlight"><pre><span class="c1">// Creating the CVFH object and the output of the following estimation //</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">CVFHEstimation</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointXYZ</span><span class="p">,</span><span class="n">pcl</span><span class="o">::</span><span class="n">PointNormal</span><span class="p">,</span><span class="n">pcl</span><span class="o">::</span><span class="n">VFHSignature308</span><span class="o">&gt;::</span><span class="n">VFHEstimator</span> <span class="n">cvfh</span><span class="p">;</span>
+    <span class="n">pcl</span><span class="o">::</span><span class="n">Feature</span><span class="o">&lt;</span><span class="n">pcl</span><span class="o">::</span><span class="n">Normal</span><span class="p">,</span><span class="n">pcl</span><span class="o">::</span><span class="n">VFHSignature308</span><span class="o">&gt;::</span><span class="n">PointCloudOut</span> <span class="n">signature</span><span class="p">;</span>
+<span class="c1">// Setting the parameters and variables for the estimation //</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">setKSearch</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">setUseGivenNormal</span><span class="p">(</span><span class="kc">true</span><span class="p">);</span>
+    <span class="n">tree</span><span class="o">-&gt;</span><span class="n">setInputCloud</span><span class="p">(</span><span class="n">cloud</span><span class="p">);</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">setInputCloud</span><span class="p">(</span><span class="n">cloud</span><span class="p">);</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">setInputNormals</span><span class="p">(</span><span class="n">normals</span><span class="p">);</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">setSearchMethod</span><span class="p">(</span><span class="n">tree</span><span class="p">);</span>
+    <span class="n">cvfh</span><span class="p">.</span><span class="n">compute</span><span class="p">(</span><span class="n">signature</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>This is the part we are most interested in. First we are creating the CVFH
+object. It has three parameters: PointInT, PointNT and PointOutT.  In our case,
+PointInT is PointXYZ since our original PointCloud only exists of XYZ datas.
+Of course you could use other point types, but then you have to change the
+point type in the &lt;&gt;, as well.  The same is valid for PointNT and PointOutT.
+PointNT is the point type of the normals, we calculated before.  In our case
+they are of type PointNormal. PointOutT is the point type for the output of the
+CVFH estimation.  So it is obvious that we take VFHSignature308 point type,
+since CVFH computes a signature of the given pointcloud.  After that, we have
+to define a feature pointcloud output object, where the output of the signature
+estimation is saved.  At least we are setting the paramters and variables for
+the estimation and computing the signature.</p>
+</div>
+<div class="section" id="compiling-and-running-the-program">
+<h1>Compiling and running the program</h1>
+<p>Add the following lines to your CMakeLists.txt</p>
+<div class="highlight-cmake"><div class="highlight"><pre><span class="nb">add_executable</span> <span class="p">(</span><span class="s">cvfh_signature</span> <span class="s">cvfh_signature.cpp</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span> <span class="p">(</span><span class="s">cvfh_signature</span> <span class="o">${</span><span class="nv">PCL_IO_LIBRARY</span><span class="o">}</span> <span class="o">${</span><span class="nv">PCL_KDTREE_LIBRARY</span><span class="o">}</span> <span class="o">${</span><span class="nv">PCL_FEATURES_LIBRARY</span><span class="o">}</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>After you have made the executable, you can run it. Simply do:</p>
+<div class="highlight-python"><pre>$ ./cvfh_signature</pre>
+</div>
+<p>You will see something similar to:</p>
+<div class="highlight-python"><pre>Signature was written into cvfh_histogram.pcd!</pre>
+</div>
+<p>You can also look at the histogram with the pcd_viewer. Copy the .pcd file to the folder, where you can find pcd_viewer.exe. Then simply do:</p>
+<blockquote>
+<div>$ ./pcd_viewer cvfh_histogram.pcd</div></blockquote>
+<p>The histogram of bun0.pcd should look like this:</p>
+<img alt="CVFH Histogram" class="align-center" src="_images/cvfh_histogram.png" />
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul> 
+      </ul>
+    </div>
+    <div class="footer">
+    </div>
+  </body>
+</html>
