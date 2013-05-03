@@ -40,26 +40,26 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\libs\vtk\include\vtk-5.8;..\libs\eigen;..\libs\pcl\include\pcl-1.6;..\KTMKinectRecorder;..\libs\pthreads\include;..\libs\boost;$(KINECTSDK10_DIR)\inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\libs\boost\boost\lib;..\libs\vtk\lib\vtk-5.8;..\libs\pcl\lib;..\libs\pthreads\lib\x86;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(KINECTSDK10_DIR)\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\libs\FLANN\include;..\libs\kinect\inc;..\libs\vtk\include\vtk-5.8;..\libs\eigen;..\libs\pcl\include\pcl-1.6;..\KTMKinectRecorder;..\libs\pthreads\include;..\libs\boost;$(IncludePath)</IncludePath>
+    <LibraryPath>..\libs\FLANN\lib;..\libs\kinect\lib\x86;..\libs\boost\boost\lib;..\libs\vtk\lib\vtk-5.8;..\libs\pcl\lib;..\libs\pthreads\lib\x86;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(LibraryPath)</LibraryPath>
     <ExecutablePath>..\DLLs;$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\libs\vtk\include\vtk-5.8;..\libs\eigen;..\KTMKinectRecorder;..\libs\pcl\include\pcl-1.6;..\libs\boost;..\libs\pthreads\include;$(KINECTSDK10_DIR)\inc;$(IncludePath)</IncludePath>
-    <LibraryPath>..\KTMKinectRecorder\Debug;..\libs\boost\boost\lib;..\libs\vtk\lib\vtk-5.8;..\libs\pcl\lib;..\libs\pthreads\lib\x86;$(KINECTSDK10_DIR)\lib\x86;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\libs\FLANN\include;..\libs\kinect\inc;..\libs\vtk\include\vtk-5.8;..\libs\eigen;..\libs\pcl\include\pcl-1.6;..\KTMKinectRecorder;..\libs\pthreads\include;..\libs\boost;$(IncludePath)</IncludePath>
+    <LibraryPath>..\libs\FLANN\lib;..\libs\kinect\lib\x86;..\libs\boost\boost\lib;..\libs\vtk\lib\vtk-5.8;..\libs\pcl\lib;..\libs\pthreads\lib\x86;$(VCInstallDir)lib;$(VCInstallDir)atlmfc\lib;$(WindowsSdkDir)lib;$(FrameworkSDKDir)\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level1</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>ThreadedFileWriter;KinectWrapper;ImageRenderer;NotificationInterface;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Kinect10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_visualization_debug.lib;pcl_kdtree_debug.lib;pcl_common_debug.lib;flann.lib;ThreadedFileWriter;KinectWrapper;ImageRenderer;NotificationInterface;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Kinect10.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\KTMKinectRecorder\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -78,7 +78,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\KTMKinectRecorder\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>WINMM.LIB;pthreadVC2.lib;Kinect10.lib;ThreadedFileWriter; ImageRenderer; KinectWrapper; NotificationInterface; kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_features_release.lib;pcl_search_release.lib;pcl_visualization_release.lib;pcl_kdtree_release.lib;pcl_common_release.lib;pcl_filters_release.lib;flann.lib;ThreadedFileWriter;KinectWrapper;ImageRenderer;NotificationInterface;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Kinect10.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
