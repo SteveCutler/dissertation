@@ -5,9 +5,39 @@ KTM::PCLWrapper::PCLWrapper(){
 	cloudViewer = new pcl::visualization::CloudViewer("Cloud Viewer");
 	firstRun = true;
 	GlobalTransform = Eigen::Matrix4f::Identity();
+	depthTransformationMatrixResolution = NUI_IMAGE_RESOLUTION_INVALID;
 }
 
 KTM::PCLWrapper::~PCLWrapper(){
+}
+
+void KTM::PCLWrapper::updateTransformationMatrix(NUI_IMAGE_RESOLUTION res){
+	int width;
+	int height;
+
+	if(res == NUI_IMAGE_RESOLUTION_640x480){
+		width = 640;
+		height = 480;
+	}else if(res == NUI_IMAGE_RESOLUTION_320x240){
+		width = 320;
+		height = 240;
+	}else if(res == NUI_IMAGE_RESOLUTION_80x60){
+		width = 80;
+		height = 60;
+	}else{
+		return;
+	}
+
+	depthTransformationMatrix = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+	for(int i = 0; i < height; i++){
+		for(int j = 0; j < width; j++){
+			Vector4 v = NuiTransformDepthImageToSkeleton(i, j, 1000, res);
+			depthTransformationMatrix->push_back(pcl::PointXYZ(-v.x / 1000.0f, v.y / 1000.0f, v.z / 1000.0f));
+		}
+	}
+
+	depthTransformationMatrixResolution = res;
 }
 
 bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight){
@@ -31,6 +61,9 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 		break;
 	}
 
+	if(depthRes != depthTransformationMatrixResolution)
+		updateTransformationMatrix(depthRes);
+
 	pcl::PointCloud<pcl::PointXYZ>::Ptr depthCloud (new pcl::PointCloud<pcl::PointXYZ>);
 	depthCloud->resize(depthDataWidth * depthDataHeight);
 
@@ -40,32 +73,16 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 			for(int dRow = 0; dRow < depthDataWidth; dRow++){
 				unsigned short d = depthData[index];
 				if(d > 0){
-					NUI_DEPTH_IMAGE_POINT depthPoint;
-					depthPoint.depth = d;
-					depthPoint.x = dCol;
-					depthPoint.y = dRow;
-					Vector4 p = NuiTransformDepthImageToSkeleton(dRow, dCol, d, depthRes);
-					depthCloud->points[index].x = p.x;
-					depthCloud->points[index].y = p.y;
-					depthCloud->points[index].z = p.z;
+					depthCloud->points[index].x = depthTransformationMatrix->points[index].x * (float)d;
+					depthCloud->points[index].y = depthTransformationMatrix->points[index].y * (float)d;
+					depthCloud->points[index].z = depthTransformationMatrix->points[index].z * (float)d;
 				}
 				index++;
 			}
 		}
 	}
 
-	if(firstRun){
-		mergedCloud = depthCloud;
-		firstRun = false;
-	}else{
-		Eigen::Matrix4f pairTransform;
-		pcl::PointCloud<pcl::PointXYZ>::Ptr tmp(new pcl::PointCloud<pcl::PointXYZ>);
-		pairAlign(depthCloud, mergedCloud, tmp, pairTransform, true);
-		pcl::transformPointCloud(*tmp, *mergedCloud, GlobalTransform);
-		GlobalTransform = pairTransform * GlobalTransform;
-	}
-
-	cloudViewer->showCloud(mergedCloud, "Cloud");
+	cloudViewer->showCloud(depthCloud, "Cloud");
 	return true;
 }
 

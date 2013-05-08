@@ -59,7 +59,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>pcl_visualization_debug.lib;pcl_kdtree_debug.lib;pcl_common_debug.lib;flann.lib;ThreadedFileWriter;KinectWrapper;ImageRenderer;NotificationInterface;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Kinect10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_features_debug.lib;pcl_search_debug.lib;pcl_visualization_debug.lib;pcl_kdtree_debug.lib;pcl_common_debug.lib;pcl_filters_debug.lib;flann.lib;ThreadedFileWriter;KinectWrapper;ImageRenderer;NotificationInterface;WINMM.LIB;pthreadVC2.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;Kinect10.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\KTMKinectRecorder\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

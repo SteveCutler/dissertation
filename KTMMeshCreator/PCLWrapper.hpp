@@ -52,6 +52,8 @@ namespace KTM{
 	class PCLWrapper{
 	private:
 		pcl::PointCloud<pcl::PointXYZ>::Ptr mergedCloud;
+		pcl::PointCloud<pcl::PointXYZ>::Ptr depthTransformationMatrix;
+		NUI_IMAGE_RESOLUTION depthTransformationMatrixResolution;
 		pcl::visualization::CloudViewer* cloudViewer;
 		Eigen::Matrix4f GlobalTransform;
 		bool firstRun;
@@ -60,7 +62,8 @@ namespace KTM{
 	public:
 		PCLWrapper();
 		~PCLWrapper();
-
+		
+		void updateTransformationMatrix(NUI_IMAGE_RESOLUTION res);
 		bool addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight);
 		bool addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight, char* RGBData, int RGBDataWidth, int RGBDataHeight);
 	};
