@@ -15,6 +15,8 @@
 
 #include <pcl/features/normal_3d.h>
 
+#include <pcl/common/geometry.h>
+
 #include <pcl/registration/icp.h>
 #include <pcl/registration/icp_nl.h>
 #include <pcl/registration/transforms.h>
@@ -42,16 +44,13 @@ namespace KTM{
 
 	class PCLWrapper{
 	private:
-		
-
 		pcl::PointCloud<pcl::PointXYZ>::Ptr mergedCloud;
+		PointCloud::Ptr prevCloud;
 		pcl::PointCloud<pcl::PointXYZ>::Ptr depthTransformationMatrix;
 		NUI_IMAGE_RESOLUTION depthTransformationMatrixResolution;
 		pcl::visualization::CloudViewer* cloudViewer;
 		Eigen::Matrix4f GlobalTransform;
 		bool firstRun;
-
-		
 	public:
 		PCLWrapper();
 		~PCLWrapper();

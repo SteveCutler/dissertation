@@ -81,8 +81,6 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 	pcl::PointCloud<pcl::PointXYZ>::Ptr depthCloud (new pcl::PointCloud<pcl::PointXYZ>);
 	depthCloud->resize(depthDataWidth * depthDataHeight);
 
-	clock_t t = clock();
-
 	int numThreads = 8;
 	pthread_t* threads = new pthread_t[numThreads];
 	depthArrayToPointCloudArgs* args = new depthArrayToPointCloudArgs[numThreads];
@@ -107,23 +105,21 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 
 	delete[] args;
 
-	clock_t threadsTime = clock() - t;
-
-	t = clock();
-	int index = 0;
-	for(int dCol = 0; dCol < depthDataHeight; dCol++){
-		for(int dRow = 0; dRow < depthDataWidth; dRow++){
-			unsigned short d = depthData[index];
-			if(d > 0){
-				depthCloud->points[index].x = depthTransformationMatrix->points[index].x * (float)d;
-				depthCloud->points[index].y = depthTransformationMatrix->points[index].y * (float)d;
-				depthCloud->points[index].z = depthTransformationMatrix->points[index].z * (float)d;
-			}
-			index++;
-		}
+	if(firstRun){
+		firstRun = false;
+		prevCloud = depthCloud;
+		mergedCloud = depthCloud;
+	}else{
+		pcl::IterativeClosestPoint<PointT,PointT> icp;
+		icp.setInputCloud(prevCloud);
+		icp.setInputTarget(depthCloud);
+		icp.align(*depthCloud);
+		pcl::transformPointCloud(*depthCloud, *depthCloud, GlobalTransform);
+		GlobalTransform = icp.getFinalTransformation() * GlobalTransform;
+		*mergedCloud = *mergedCloud + *depthCloud;
+		prevCloud = depthCloud;
 	}
-	clock_t loopTime = clock() - t;
-	cloudViewer->showCloud(depthCloud, "Cloud");
+	cloudViewer->showCloud(mergedCloud, "Cloud");
 	
 	return true;
 }
