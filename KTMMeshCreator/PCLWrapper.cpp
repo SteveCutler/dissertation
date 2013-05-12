@@ -86,9 +86,10 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 	KTM::PCThreading::depthArrayToVectorPC(depthData, depthDataWidth, depthDataHeight, depthTransformationMatrix, points);
 	KTM::PCThreading::generateNormalsFromVectors(points,depthDataWidth,depthDataHeight,normals);
 
-	Eigen::Vector4f p;
+	Eigen::Vector4f p, n;
 	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
 		p = points[i];
+		n = normals[i];
 	}
 	//KTM::PCThreading::depthArrayToPointCloud(depthData, depthTransformationMatrix, depthCloud);
 
@@ -96,16 +97,23 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 		firstRun = false;
 		//mergedCloud = depthCloud;	
 	}else{
-		//ICP(
-		//	depthData,
-		//	depthDataWidth * depthDataHeight,
-		//	points,
-		//	normals,
-		//	prevDepthData,
-		//	prevPoints,
-		//	prevNormals,
-		//	GlobalTransform
-		//);
+		Eigen::Matrix4f estimatedTransform;
+		ICP(
+			depthData,
+			depthDataWidth * depthDataHeight,
+			points,
+			normals,
+			prevDepthData,
+			prevPoints,
+			prevNormals,
+			GlobalTransform,
+			&estimatedTransform
+		);
+		GlobalTransform = estimatedTransform;
+	}
+
+	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
+		points[i] = GlobalTransform * points[i];
 	}
 
 	KTM::PCThreading::vectorPCToPCLPC(points, depthDataWidth * depthDataHeight, depthCloud);
@@ -138,12 +146,14 @@ void KTM::PCLWrapper::ICP(
 	unsigned short* prevDepthData ,
 	Eigen::Vector4f* prevDepthCloud,
 	Eigen::Vector4f* prevDepthCloudNormals,
-	Eigen::Matrix4f& estimatedTransform,
+	Eigen::Matrix4f& guessTransform,
+	Eigen::Matrix4f* estimatedTransform,
 	float costThreshold,
 	int maxIterations,
 	float distanceThreshold,
 	float normalThreshold
 ){
+	*estimatedTransform = guessTransform;
 	float sum = 1000;
 	int iteration = 0;
 
@@ -155,13 +165,13 @@ void KTM::PCLWrapper::ICP(
 		Eigen::Vector4f pCoM;
 		for(int i = 0; i < dataSize; i++){
 			if(depthData[i] > 0 && prevDepthData[i] > 0){
-				Eigen::Vector4f v = estimatedTransform * depthCloud[i];
-				Eigen::Vector4f n = estimatedTransform * depthCloudNormals[i];
+				Eigen::Vector4f v = *estimatedTransform * depthCloud[i];
+				Eigen::Vector4f n = *estimatedTransform * depthCloudNormals[i];
 				
 				Eigen::Vector4f prevV = prevDepthCloud[i];
 				Eigen::Vector4f prevN = prevDepthCloudNormals[i];
 				if((v - prevV).norm() < distanceThreshold && abs(n.dot(prevN)) < normalThreshold){
-					float part = (v - prevV).dot(prevN);
+					float part = (v - prevV).norm();
 					part = part * part;
 					sum += part;
 					x.push_back(prevV);
@@ -178,7 +188,7 @@ void KTM::PCLWrapper::ICP(
 		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> x_;
 		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> p_;
 
-		for(int i = 0; i < xCoM.size(); i++){
+		for(int i = 0; i < xCoM.size() && i < x.size(); i++){
 			x_.push_back(x[i] - xCoM);
 			p_.push_back(p[i] - pCoM);
 		}
@@ -189,30 +199,32 @@ void KTM::PCLWrapper::ICP(
 			W = W + (x_[i] * p_[i].transpose());
 		}
 		
-		Eigen::JacobiSVD<Eigen::Matrix4f> svd;
-		svd.compute(W);
+		Eigen::JacobiSVD<Eigen::Matrix4f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+		bool u = svd.computeU();
+		bool v = svd.computeV();
+
 		Eigen::Matrix4f U = svd.matrixU();
 		Eigen::Matrix4f V = svd.matrixV();
 
 		Eigen::Matrix4f R = U * V.transpose();
 		Eigen::Vector4f t = xCoM - R * pCoM;
 		
-		estimatedTransform(0,0) = R(0,0);
-		estimatedTransform(0,1) = R(0,1);
-		estimatedTransform(0,2) = R(0,2);
+		(*estimatedTransform)(0,0) = R(0,0);
+		(*estimatedTransform)(0,1) = R(0,1);
+		(*estimatedTransform)(0,2) = R(0,2);
 		
-		estimatedTransform(1,0) = R(1,0);
-		estimatedTransform(1,1) = R(1,1);
-		estimatedTransform(1,2) = R(1,2);
+		(*estimatedTransform)(1,0) = R(1,0);
+		(*estimatedTransform)(1,1) = R(1,1);
+		(*estimatedTransform)(1,2) = R(1,2);
 		
-		estimatedTransform(2,0) = R(2,0);
-		estimatedTransform(2,1) = R(2,1);
-		estimatedTransform(2,2) = R(2,2);
+		(*estimatedTransform)(2,0) = R(2,0);
+		(*estimatedTransform)(2,1) = R(2,1);
+		(*estimatedTransform)(2,2) = R(2,2);
 		
-		estimatedTransform(3,0) = t(0);
-		estimatedTransform(3,1) = t(1);
-		estimatedTransform(3,2) = t(2);
+		(*estimatedTransform)(3,0) = t(0);
+		(*estimatedTransform)(3,1) = t(1);
+		(*estimatedTransform)(3,2) = t(2);
 		
-		estimatedTransform(3,3) = 1.0f;
+		(*estimatedTransform)(3,3) = 1.0f;
 	}
 }

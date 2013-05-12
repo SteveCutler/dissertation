@@ -21,6 +21,7 @@
 #include <pcl/registration/icp_nl.h>
 #include <pcl/registration/transforms.h>
 
+#include <Eigen/Eigen>
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
 
@@ -36,7 +37,7 @@ typedef pcl::PointCloud<PointT> PointCloud;
 typedef pcl::PointNormal PointNormalT;
 typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 
-#define KTM_PCLWRAPPER_COST_THRESHOLD 0.5f
+#define KTM_PCLWRAPPER_COST_THRESHOLD 0.001f
 #define KTM_PCLWRAPPER_MAX_ITER 15
 #define KTM_PCLWRAPPER_DIST_THRESHOLD 1.0f
 #define KTM_PCLWRAPPER_ICP_NORM_THRESHOLD 45.0f
@@ -62,6 +63,6 @@ namespace KTM{
 		void updateTransformationMatrix(NUI_IMAGE_RESOLUTION res);
 		bool addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight);
 		bool addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight, char* RGBData, int RGBDataWidth, int RGBDataHeight);
-		void ICP(unsigned short* depthData,int dataSize,Eigen::Vector4f* depthCloud,Eigen::Vector4f* depthCloudNormals,unsigned short* prevDepthData ,Eigen::Vector4f* prevDepthCloud,Eigen::Vector4f* prevDepthCloudNormals,Eigen::Matrix4f& estimatedTransform, float costThreshHold = KTM_PCLWRAPPER_COST_THRESHOLD, int maxIterations = KTM_PCLWRAPPER_MAX_ITER, float distanceThreshold = KTM_PCLWRAPPER_DIST_THRESHOLD,float normalThreshold = KTM_PCLWRAPPER_ICP_NORM_THRESHOLD);
+		void ICP(unsigned short* depthData,int dataSize,Eigen::Vector4f* depthCloud,Eigen::Vector4f* depthCloudNormals,unsigned short* prevDepthData ,Eigen::Vector4f* prevDepthCloud,Eigen::Vector4f* prevDepthCloudNormals, Eigen::Matrix4f& guessTransform, Eigen::Matrix4f* estimatedTransform, float costThreshHold = KTM_PCLWRAPPER_COST_THRESHOLD, int maxIterations = KTM_PCLWRAPPER_MAX_ITER, float distanceThreshold = KTM_PCLWRAPPER_DIST_THRESHOLD,float normalThreshold = KTM_PCLWRAPPER_ICP_NORM_THRESHOLD);
 	};
 };

@@ -75,10 +75,15 @@ void* KTM::PCThreading::t_depthArrayToVectorPC(void* threadArgs){
 	int pointsPerThread = args->transformationMatrix->size() / args->numThreads;
 
 	for(int i = args->threadIndex * pointsPerThread; i < (args->threadIndex + 1) * pointsPerThread && i < args->transformationMatrix->size(); i++){
+		args->outPoints[i](3) = 1;
 		if(args->depthData[i] > 0){
 			args->outPoints[i].x() = args->transformationMatrix->points[i].x * (float)args->depthData[i];
 			args->outPoints[i].y() = args->transformationMatrix->points[i].y * (float)args->depthData[i];
 			args->outPoints[i].z() = args->transformationMatrix->points[i].z * (float)args->depthData[i];
+		}else{
+			args->outPoints[i].x() = 0;
+			args->outPoints[i].y() = 0;
+			args->outPoints[i].z() = 0;
 		}
 	}
 	return NULL;
@@ -129,7 +134,7 @@ void* KTM::PCThreading::t_depthArrayToVectorPCTAN(void* threadArgs){
 	for(int i = startLine; i < endLine; i++){
 		for(int j = 0; j < args->width; j++){
 			int index = (i * args->width) + j;
-			args->outPoints[index].w() = 1;
+			args->outPoints[index](3) = 1;
 			if(args->depthData == 0){
 				continue;
 				args->outPoints[index].x() = 0;
@@ -212,7 +217,7 @@ void KTM::PCThreading::generateNormalsFromVectors(Eigen::Vector4f* points, int w
 		args[i].width = width;
 		args[i].height = height;
 		args[i].outNormals = outNormals;
-		pthread_create(&threads[i], &attr, t_depthArrayToVectorPC, (void*)&args[i]);
+		pthread_create(&threads[i], &attr, t_generateNormalsFromVectors, (void*)&args[i]);
 	}
 
 	for(int i = 0; i < numThreads; i++){
@@ -236,24 +241,33 @@ void* KTM::PCThreading::t_generateNormalsFromVectors(void* threadArgs){
 	else
 		endLine = startLine;
 
-	for(int y = startLine; y < endLine; y++){
+	for(int y = startLine; y < args->height; y++){
 		for(int x = 0; x < args->width; x++){
 			int index = (y * args->width) + x;
 
-			int indexV2 = x == args->width - 1 ? x + 1 : x - 1;
+			int indexV2 = x < args->width - 1 ? x + 1 : x - 1;
 			indexV2 = (y * args->width) + indexV2;
 
-			int indexV3 = y == args->height - 1 ? y + 1 : y - 1;
+			int indexV3 = y < args->height - 1 ? y + 1 : y - 1;
 			indexV3 = (indexV3 * args->width) + x;
 
 			Eigen::Vector3f v1(args->points[index].x(), args->points[index].y(), args->points[index].z());
 			Eigen::Vector3f v2(args->points[indexV2].x(), args->points[indexV2].y(), args->points[indexV2].z());
 			Eigen::Vector3f v3(args->points[indexV3].x(), args->points[indexV3].y(), args->points[indexV3].z());
-			Eigen::Vector3f n = (v2 - v1).cross(v3 - v1);
-			args->outNormals[index].x() = n.x();
-			args->outNormals[index].y() = n.y();
-			args->outNormals[index].z() = n.z();
-			args->outNormals[index].w() = 0;
+			try{
+				Eigen::Vector3f n = (v2 - v1).cross(v3 - v1);
+				n.normalize();
+				args->outNormals[index](0) = n.x();
+				args->outNormals[index](1) = n.y();
+				args->outNormals[index](2) = n.z();
+				args->outNormals[index](3) = 0;
+			}catch(...){
+				args->outNormals[index](0) = 0;
+				args->outNormals[index](1) = 0;
+				args->outNormals[index](2) = 0;
+				args->outNormals[index](3) = 0;
+			}
+			
 		}
 	}
 
