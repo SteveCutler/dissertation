@@ -2,10 +2,14 @@
 
 KTM::PCLWrapper::PCLWrapper(){
 	mergedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+	prevCloud = PointCloud::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 	cloudViewer = new pcl::visualization::CloudViewer("Cloud Viewer");
 	firstRun = true;
 	GlobalTransform = Eigen::Matrix4f::Identity();
 	depthTransformationMatrixResolution = NUI_IMAGE_RESOLUTION_INVALID;
+	TAN = NULL;
+	prevPoints = NULL;
+	prevNormals = NULL;
 }
 
 KTM::PCLWrapper::~PCLWrapper(){
@@ -38,24 +42,17 @@ void KTM::PCLWrapper::updateTransformationMatrix(NUI_IMAGE_RESOLUTION res){
 	}
 
 	depthTransformationMatrixResolution = res;
+
+	if(TAN != NULL)
+		delete[] TAN;
+
+	TAN = new float(height);
+
+//	KTM::PCThreading::createTANTable(height, 43.0f, TAN);
 }
 
 bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight){
 	return addToCloud(depthData, depthDataWidth, depthDataHeight, NULL, 0, 0);
-}
-
-void* KTM::t_depthArrayToPointCloud(void* threadArgs){
-	depthArrayToPointCloudArgs* args = (depthArrayToPointCloudArgs*)threadArgs;
-	int pointsPerThread = args->transformationMatrix->size() / args->numThreads;
-
-	for(int i = args->threadIndex * pointsPerThread; i < (args->threadIndex + 1) * pointsPerThread && i < args->transformationMatrix->size(); i++){
-		if(args->depthData[i] > 0){
-			args->outCloud->points[i].x = args->transformationMatrix->points[i].x * (float)args->depthData[i];
-			args->outCloud->points[i].y = args->transformationMatrix->points[i].y * (float)args->depthData[i];
-			args->outCloud->points[i].z = args->transformationMatrix->points[i].z * (float)args->depthData[i];
-		}
-	}
-	return NULL;
 }
 
 bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, int depthDataHeight, char* RGBData, int RGBDataWidth, int RGBDataHeight){
@@ -75,51 +72,147 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 		break;
 	}
 
-	if(depthRes != depthTransformationMatrixResolution)
-		updateTransformationMatrix(depthRes);
-
-	pcl::PointCloud<pcl::PointXYZ>::Ptr depthCloud (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr depthCloud(new pcl::PointCloud<pcl::PointXYZ>);
 	depthCloud->resize(depthDataWidth * depthDataHeight);
 
-	int numThreads = 8;
-	pthread_t* threads = new pthread_t[numThreads];
-	depthArrayToPointCloudArgs* args = new depthArrayToPointCloudArgs[numThreads];
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	if(depthRes != depthTransformationMatrixResolution){
+		updateTransformationMatrix(depthRes);
+		prevCloud->resize(depthDataWidth * depthDataHeight);
+	}
+
 	
-	for(int i = 0; i < numThreads; i++){
-		std::stringstream ss;
-		ss << "DepthArrayToPointCloud Thread " << i;
-		args[i].numThreads = numThreads;
-		args[i].threadIndex = i;
-		args[i].outCloud = depthCloud;
-		args[i].depthData = depthData;
-		args[i].transformationMatrix = depthTransformationMatrix;
-		pthread_create(&threads[i], &attr, t_depthArrayToPointCloud, (void*)&args[i]);
-	}
+	Eigen::Vector4f* points = new Eigen::Vector4f[depthDataWidth * depthDataHeight];
+	Eigen::Vector4f* normals = new Eigen::Vector4f[depthDataWidth * depthDataHeight];
+	KTM::PCThreading::depthArrayToVectorPC(depthData, depthDataWidth, depthDataHeight, depthTransformationMatrix, points);
+	KTM::PCThreading::generateNormalsFromVectors(points,depthDataWidth,depthDataHeight,normals);
 
-	for(int i = 0; i < numThreads; i++){
-		pthread_join(threads[i], NULL);
+	Eigen::Vector4f p;
+	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
+		p = points[i];
 	}
-
-	delete[] args;
+	//KTM::PCThreading::depthArrayToPointCloud(depthData, depthTransformationMatrix, depthCloud);
 
 	if(firstRun){
 		firstRun = false;
-		prevCloud = depthCloud;
-		mergedCloud = depthCloud;
+		//mergedCloud = depthCloud;	
 	}else{
-		pcl::IterativeClosestPoint<PointT,PointT> icp;
-		icp.setInputCloud(prevCloud);
-		icp.setInputTarget(depthCloud);
-		icp.align(*depthCloud);
-		pcl::transformPointCloud(*depthCloud, *depthCloud, GlobalTransform);
-		GlobalTransform = icp.getFinalTransformation() * GlobalTransform;
-		*mergedCloud = *mergedCloud + *depthCloud;
-		prevCloud = depthCloud;
+		//ICP(
+		//	depthData,
+		//	depthDataWidth * depthDataHeight,
+		//	points,
+		//	normals,
+		//	prevDepthData,
+		//	prevPoints,
+		//	prevNormals,
+		//	GlobalTransform
+		//);
 	}
-	cloudViewer->showCloud(mergedCloud, "Cloud");
+
+	KTM::PCThreading::vectorPCToPCLPC(points, depthDataWidth * depthDataHeight, depthCloud);
+
+	//*prevCloud = *depthCloud;
+	if(NULL != prevPoints)
+		delete[] prevPoints;
+
+	if(NULL != prevNormals)
+		delete[] prevNormals;
+	prevPoints = points;
+	prevNormals = normals;
+	prevDepthData = depthData;
+
+
+	
+
+	cloudViewer->showCloud(depthCloud, "Cloud");
 	
 	return true;
+}
+
+
+
+void KTM::PCLWrapper::ICP(
+	unsigned short* depthData,
+	int dataSize,
+	Eigen::Vector4f* depthCloud,
+	Eigen::Vector4f* depthCloudNormals,
+	unsigned short* prevDepthData ,
+	Eigen::Vector4f* prevDepthCloud,
+	Eigen::Vector4f* prevDepthCloudNormals,
+	Eigen::Matrix4f& estimatedTransform,
+	float costThreshold,
+	int maxIterations,
+	float distanceThreshold,
+	float normalThreshold
+){
+	float sum = 1000;
+	int iteration = 0;
+
+	while(sum > costThreshold && iteration++ < maxIterations){
+		sum = 0;
+		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> x;
+		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> p;
+		Eigen::Vector4f xCoM;
+		Eigen::Vector4f pCoM;
+		for(int i = 0; i < dataSize; i++){
+			if(depthData[i] > 0 && prevDepthData[i] > 0){
+				Eigen::Vector4f v = estimatedTransform * depthCloud[i];
+				Eigen::Vector4f n = estimatedTransform * depthCloudNormals[i];
+				
+				Eigen::Vector4f prevV = prevDepthCloud[i];
+				Eigen::Vector4f prevN = prevDepthCloudNormals[i];
+				if((v - prevV).norm() < distanceThreshold && abs(n.dot(prevN)) < normalThreshold){
+					float part = (v - prevV).dot(prevN);
+					part = part * part;
+					sum += part;
+					x.push_back(prevV);
+					p.push_back(v);
+					xCoM += prevV;
+					pCoM += v;
+				}
+			}
+		}
+
+		xCoM = xCoM / x.size();
+		pCoM = pCoM / p.size();
+
+		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> x_;
+		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> p_;
+
+		for(int i = 0; i < xCoM.size(); i++){
+			x_.push_back(x[i] - xCoM);
+			p_.push_back(p[i] - pCoM);
+		}
+
+		Eigen::Matrix4f W;
+
+		for(int i = 0; i < x_.size(); i++){
+			W = W + (x_[i] * p_[i].transpose());
+		}
+		
+		Eigen::JacobiSVD<Eigen::Matrix4f> svd;
+		svd.compute(W);
+		Eigen::Matrix4f U = svd.matrixU();
+		Eigen::Matrix4f V = svd.matrixV();
+
+		Eigen::Matrix4f R = U * V.transpose();
+		Eigen::Vector4f t = xCoM - R * pCoM;
+		
+		estimatedTransform(0,0) = R(0,0);
+		estimatedTransform(0,1) = R(0,1);
+		estimatedTransform(0,2) = R(0,2);
+		
+		estimatedTransform(1,0) = R(1,0);
+		estimatedTransform(1,1) = R(1,1);
+		estimatedTransform(1,2) = R(1,2);
+		
+		estimatedTransform(2,0) = R(2,0);
+		estimatedTransform(2,1) = R(2,1);
+		estimatedTransform(2,2) = R(2,2);
+		
+		estimatedTransform(3,0) = t(0);
+		estimatedTransform(3,1) = t(1);
+		estimatedTransform(3,2) = t(2);
+		
+		estimatedTransform(3,3) = 1.0f;
+	}
 }
