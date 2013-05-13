@@ -80,6 +80,7 @@ bool KTM::ThreadedFileWriter::flush(){
 
 	writeProcessActive = false;
 	pthread_join(writeProcessThread, NULL);
+	return true;
 }
 
 bool KTM::ThreadedFileWriter::releaseOutFile(){

@@ -75,15 +75,16 @@ void* KTM::PCThreading::t_depthArrayToVectorPC(void* threadArgs){
 	int pointsPerThread = args->transformationMatrix->size() / args->numThreads;
 
 	for(int i = args->threadIndex * pointsPerThread; i < (args->threadIndex + 1) * pointsPerThread && i < args->transformationMatrix->size(); i++){
-		args->outPoints[i](3) = 1;
 		if(args->depthData[i] > 0){
 			args->outPoints[i].x() = args->transformationMatrix->points[i].x * (float)args->depthData[i];
 			args->outPoints[i].y() = args->transformationMatrix->points[i].y * (float)args->depthData[i];
 			args->outPoints[i].z() = args->transformationMatrix->points[i].z * (float)args->depthData[i];
+			args->outPoints[i].w() = 1;
 		}else{
 			args->outPoints[i].x() = 0;
 			args->outPoints[i].y() = 0;
 			args->outPoints[i].z() = 0;
+			args->outPoints[i].w() = 0;
 		}
 	}
 	return NULL;
@@ -306,7 +307,7 @@ void* KTM::PCThreading::t_vectorPCToPCLPC(void* threadArgs){
 	int pointsPerThread = args->size / args->numThreads;
 
 	for(int i = args->threadIndex * pointsPerThread; i < (args->threadIndex + 1) * pointsPerThread; i++){
-		if(args->points[i].x() > 0 || args->points[i].y() > 0 || args->points[i].z() > 0){
+		if(args->points[i].x() != 0 || args->points[i].y() != 0 || args->points[i].z() != 0){
 			args->outCloud->points[i].x = args->points[i].x();
 			args->outCloud->points[i].y = args->points[i].y();
 			args->outCloud->points[i].z = args->points[i].z();

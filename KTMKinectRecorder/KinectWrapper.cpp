@@ -567,6 +567,8 @@ bool KTM::KinectWrapper::setDepthRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPI
             &hDepthStreamHandle
 		);
 	}
+
+	return true;
 }
 
 bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICode){
@@ -602,6 +604,8 @@ bool KTM::KinectWrapper::setRGBRecordingResolution(NUI_IMAGE_RESOLUTION NUIAPICo
             &hColorStreamHandle
 		);
 	}
+
+	return true;
 }
 
 NUI_IMAGE_RESOLUTION KTM::KinectWrapper::getRGBResolutionCode(){

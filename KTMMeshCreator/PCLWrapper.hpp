@@ -37,10 +37,10 @@ typedef pcl::PointCloud<PointT> PointCloud;
 typedef pcl::PointNormal PointNormalT;
 typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 
-#define KTM_PCLWRAPPER_COST_THRESHOLD 0.001f
+#define KTM_PCLWRAPPER_COST_THRESHOLD 0.4f
 #define KTM_PCLWRAPPER_MAX_ITER 15
-#define KTM_PCLWRAPPER_DIST_THRESHOLD 1.0f
-#define KTM_PCLWRAPPER_ICP_NORM_THRESHOLD 45.0f
+#define KTM_PCLWRAPPER_DIST_THRESHOLD 0.2f
+#define KTM_PCLWRAPPER_ICP_NORM_THRESHOLD 10.0f
 
 namespace KTM{
 	class PCLWrapper{

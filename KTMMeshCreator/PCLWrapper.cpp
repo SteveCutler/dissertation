@@ -109,16 +109,16 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 			GlobalTransform,
 			&estimatedTransform
 		);
-		GlobalTransform = estimatedTransform;
+		GlobalTransform = estimatedTransform.inverse();
 	}
 
 	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
 		points[i] = GlobalTransform * points[i];
+		normals[i] = GlobalTransform * normals[i];
 	}
 
 	KTM::PCThreading::vectorPCToPCLPC(points, depthDataWidth * depthDataHeight, depthCloud);
 
-	//*prevCloud = *depthCloud;
 	if(NULL != prevPoints)
 		delete[] prevPoints;
 
@@ -128,15 +128,10 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 	prevNormals = normals;
 	prevDepthData = depthData;
 
-
-	
-
 	cloudViewer->showCloud(depthCloud, "Cloud");
 	
 	return true;
 }
-
-
 
 void KTM::PCLWrapper::ICP(
 	unsigned short* depthData,
@@ -154,15 +149,17 @@ void KTM::PCLWrapper::ICP(
 	float normalThreshold
 ){
 	*estimatedTransform = guessTransform;
-	float sum = 1000;
+	float sum = 0;
+	float prevSum = -1;
 	int iteration = 0;
 
-	while(sum > costThreshold && iteration++ < maxIterations){
+	while(abs(sum - prevSum) > costThreshold && iteration++ < maxIterations){
+		prevSum = sum;
 		sum = 0;
-		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> x;
-		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> p;
-		Eigen::Vector4f xCoM;
-		Eigen::Vector4f pCoM;
+		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> x;
+		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> p;
+		Eigen::Vector3f xCoM = Eigen::Vector3f::Zero();
+		Eigen::Vector3f pCoM = Eigen::Vector3f::Zero();
 		for(int i = 0; i < dataSize; i++){
 			if(depthData[i] > 0 && prevDepthData[i] > 0){
 				Eigen::Vector4f v = *estimatedTransform * depthCloud[i];
@@ -174,10 +171,12 @@ void KTM::PCLWrapper::ICP(
 					float part = (v - prevV).norm();
 					part = part * part;
 					sum += part;
-					x.push_back(prevV);
-					p.push_back(v);
-					xCoM += prevV;
-					pCoM += v;
+					Eigen::Vector3f v3f(v.x(), v.y(), v.z());
+					Eigen::Vector3f prevV3f(prevV.x(), prevV.y(), prevV.z());
+					x.push_back(prevV3f);
+					p.push_back(v3f);
+					xCoM += prevV3f;
+					pCoM += v3f;
 				}
 			}
 		}
@@ -185,29 +184,32 @@ void KTM::PCLWrapper::ICP(
 		xCoM = xCoM / x.size();
 		pCoM = pCoM / p.size();
 
-		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> x_;
-		std::vector<const Eigen::Vector4f, Eigen::aligned_allocator<const Eigen::Vector4f>> p_;
+		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> x_;
+		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> p_;
 
-		for(int i = 0; i < xCoM.size() && i < x.size(); i++){
+		for(int i = 0; i < x.size(); i++){
 			x_.push_back(x[i] - xCoM);
 			p_.push_back(p[i] - pCoM);
 		}
 
-		Eigen::Matrix4f W;
+		Eigen::Matrix3f W = Eigen::Matrix3f::Zero();
 
 		for(int i = 0; i < x_.size(); i++){
 			W = W + (x_[i] * p_[i].transpose());
 		}
 		
-		Eigen::JacobiSVD<Eigen::Matrix4f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+		Eigen::JacobiSVD<Eigen::Matrix3f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
 		bool u = svd.computeU();
 		bool v = svd.computeV();
 
-		Eigen::Matrix4f U = svd.matrixU();
-		Eigen::Matrix4f V = svd.matrixV();
+		Eigen::LLT<Eigen::Matrix3f> choleskyDecomp(W);
+		choleskyDecomp.compute(W);
+		
+		Eigen::Matrix3f U = svd.matrixU();
+		Eigen::Matrix3f V = svd.matrixV();
 
-		Eigen::Matrix4f R = U * V.transpose();
-		Eigen::Vector4f t = xCoM - R * pCoM;
+		Eigen::Matrix3f R = U * V.transpose();
+		Eigen::Vector3f t = xCoM - (R * pCoM);
 		
 		(*estimatedTransform)(0,0) = R(0,0);
 		(*estimatedTransform)(0,1) = R(0,1);
@@ -221,9 +223,9 @@ void KTM::PCLWrapper::ICP(
 		(*estimatedTransform)(2,1) = R(2,1);
 		(*estimatedTransform)(2,2) = R(2,2);
 		
-		(*estimatedTransform)(3,0) = t(0);
-		(*estimatedTransform)(3,1) = t(1);
-		(*estimatedTransform)(3,2) = t(2);
+		(*estimatedTransform)(0,3) = t(0);
+		(*estimatedTransform)(1,3) = t(1);
+		(*estimatedTransform)(2,3) = t(2);
 		
 		(*estimatedTransform)(3,3) = 1.0f;
 	}
