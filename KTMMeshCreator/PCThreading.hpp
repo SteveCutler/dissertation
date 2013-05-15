@@ -8,14 +8,19 @@
 
 namespace KTM{
 	namespace PCThreading{
-#define KTM_PCTHREADING_NUM_THREADS 8
+		typedef pcl::PointXYZRGB PointT;
+		typedef pcl::PointCloud<PointT> PointCloud;
+		typedef pcl::PointNormal PointNormalT;
+		typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
+		#define KTM_PCTHREADING_NUM_THREADS 8
+
 		/* Custom Types */
 		typedef struct _depthArrayToPointCloudArgs{
 			int numThreads;
 			int threadIndex;
 			unsigned short* depthData;
 			pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix;
-			pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud;
+			PointCloud::Ptr outCloud;
 		} depthArrayToPointCloudArgs;
 
 		typedef struct _createTANTableArgs{
@@ -60,7 +65,7 @@ namespace KTM{
 			int threadIndex;
 			Eigen::Vector4f* points;
 			int size;
-			pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud;
+			PointCloud::Ptr outCloud;
 		} vectorPCToPCLPCArgs;
 
 		/* Threaded Functions */
@@ -72,12 +77,12 @@ namespace KTM{
 		void* t_vectorPCToPCLPC(void* threadArgs);
 
 		/* Starter Funcitons */
-		void depthArrayToPointCloud(unsigned short* depthData, pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix, pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud, int numThreads = KTM_PCTHREADING_NUM_THREADS);
+		void depthArrayToPointCloud(unsigned short* depthData, pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix, PointCloud::Ptr outCloud, int numThreads = KTM_PCTHREADING_NUM_THREADS);
 		void createTANTable(int fieldHeight, float verticalFOV, float* tan, int numThreads = KTM_PCTHREADING_NUM_THREADS);
 		void depthArrayToVectorPC(unsigned short* depthData, int width, int height, float* TAN, Eigen::Vector4f* outVector, int numThreads = KTM_PCTHREADING_NUM_THREADS);
 		void depthArrayToVectorPC(unsigned short* depthData, int width, int height, pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix, Eigen::Vector4f* outVector, int numThreads = KTM_PCTHREADING_NUM_THREADS);
 		void generateNormalsFromVectors(Eigen::Vector4f* points, int width, int height, Eigen::Vector4f* outNormals, int numThreads = KTM_PCTHREADING_NUM_THREADS);
-		void vectorPCToPCLPC(Eigen::Vector4f* points, int size, pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud, int numThreads = KTM_PCTHREADING_NUM_THREADS);
+		void vectorPCToPCLPC(Eigen::Vector4f* points, int size, PointCloud::Ptr outCloud, int numThreads = KTM_PCTHREADING_NUM_THREADS);
 	};
 };
 

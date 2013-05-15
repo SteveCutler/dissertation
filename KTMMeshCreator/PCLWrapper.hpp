@@ -32,20 +32,20 @@
 #include <pthread.h>
 #include "PCThreading.hpp"
 
-typedef pcl::PointXYZ PointT;
+typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloud;
 typedef pcl::PointNormal PointNormalT;
 typedef pcl::PointCloud<PointNormalT> PointCloudWithNormals;
 
-#define KTM_PCLWRAPPER_COST_THRESHOLD 0.4f
+#define KTM_PCLWRAPPER_COST_THRESHOLD 0.5f
 #define KTM_PCLWRAPPER_MAX_ITER 15
-#define KTM_PCLWRAPPER_DIST_THRESHOLD 0.2f
-#define KTM_PCLWRAPPER_ICP_NORM_THRESHOLD 10.0f
+#define KTM_PCLWRAPPER_DIST_THRESHOLD 10.0f
+#define KTM_PCLWRAPPER_ICP_NORM_THRESHOLD 6.0f
 
 namespace KTM{
 	class PCLWrapper{
 	private:
-		pcl::PointCloud<pcl::PointXYZ>::Ptr mergedCloud;
+		PointCloud::Ptr mergedCloud;
 		PointCloud::Ptr prevCloud;
 		Eigen::Vector4f* prevPoints;
 		Eigen::Vector4f* prevNormals;
@@ -54,6 +54,7 @@ namespace KTM{
 		NUI_IMAGE_RESOLUTION depthTransformationMatrixResolution;
 		pcl::visualization::CloudViewer* cloudViewer;
 		Eigen::Matrix4f GlobalTransform;
+		Eigen::Matrix4f prevTransform;
 		bool firstRun;
 		float* TAN;
 	public:

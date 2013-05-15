@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------
 // Depth Array to PCL Point Cloud
 //----------------------------------------------------------------------------
-void KTM::PCThreading::depthArrayToPointCloud(unsigned short* depthData, pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix, pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud, int numThreads){
+void KTM::PCThreading::depthArrayToPointCloud(unsigned short* depthData, pcl::PointCloud<pcl::PointXYZ>::Ptr transformationMatrix, PointCloud::Ptr outCloud, int numThreads){
 	pthread_t* threads = new pthread_t[numThreads];
 	PCThreading::depthArrayToPointCloudArgs* args = new PCThreading::depthArrayToPointCloudArgs[numThreads];
 	pthread_attr_t attr;
@@ -278,7 +278,7 @@ void* KTM::PCThreading::t_generateNormalsFromVectors(void* threadArgs){
 //----------------------------------------------------------------------------
 // Depth Array to PCL Point Cloud
 //----------------------------------------------------------------------------
-void KTM::PCThreading::vectorPCToPCLPC(Eigen::Vector4f* points, int size, pcl::PointCloud<pcl::PointXYZ>::Ptr outCloud, int numThreads){
+void KTM::PCThreading::vectorPCToPCLPC(Eigen::Vector4f* points, int size, PointCloud::Ptr outCloud, int numThreads){
 	pthread_t* threads = new pthread_t[numThreads];
 	PCThreading::_vectorPCToPCLPCArgs* args = new PCThreading::_vectorPCToPCLPCArgs[numThreads];
 	pthread_attr_t attr;
@@ -311,6 +311,9 @@ void* KTM::PCThreading::t_vectorPCToPCLPC(void* threadArgs){
 			args->outCloud->points[i].x = args->points[i].x();
 			args->outCloud->points[i].y = args->points[i].y();
 			args->outCloud->points[i].z = args->points[i].z();
+			args->outCloud->points[i].r = 255.0f;
+			args->outCloud->points[i].g = 255.0f;
+			args->outCloud->points[i].b = 255.0f;
 		}
 	}
 	return NULL;

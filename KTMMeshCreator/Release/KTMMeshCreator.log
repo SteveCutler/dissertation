@@ -1,29 +1,20 @@
-﻿Build started 13/05/2013 09:15:37.
-     1>Project "C:\Users\gante_000\git\dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" on node 2 (build target(s)).
+﻿Build started 15/05/2013 20:58:37.
+     1>Project "C:\Users\ganterd\Desktop\Dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Touching "Release\MeshCreator.unsuccessfulbuild".
+         Creating "Release\MeshCreator.unsuccessfulbuild" because "AlwaysCreate" was specified.
        ClCompile:
          All outputs are up-to-date.
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /Zi /nologo /W1 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _WINDOWS /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt PCLWrapper.cpp
-         PCLWrapper.cpp
+         All outputs are up-to-date.
        ResourceCompile:
          All outputs are up-to-date.
        Link:
-         c:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\gante_000\git\dissertation\Release\MeshCreator.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:..\KTMKinectRecorder\Release pcl_features_release.lib pcl_search_release.lib pcl_visualization_release.lib pcl_kdtree_release.lib pcl_common_release.lib pcl_filters_release.lib flann.lib ThreadedFileWriter KinectWrapper ImageRenderer NotificationInterface WINMM.LIB pthreadVC2.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib Kinect10.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Release\MeshCreator.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"C:\Users\gante_000\git\dissertation\Release\MeshCreator.pdb" /SUBSYSTEM:WINDOWS /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\gante_000\git\dissertation\Release\MeshCreator.lib" /MACHINE:X86 Release\MeshCreator.res
-         Release\MeshCreator.obj
-         Release\PCLWrapper.obj
-         Release\PCThreading.obj
-         Release\stdafx.obj
-         Generating code
-         Finished generating code
-         KTMMeshCreator.vcxproj -> C:\Users\gante_000\git\dissertation\Release\MeshCreator.exe
-       Manifest:
-         C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"C:\Users\gante_000\git\dissertation\Release\MeshCreator.exe;#1" /manifest Release\MeshCreator.exe.intermediate.manifest
+         All outputs are up-to-date.
+         KTMMeshCreator.vcxproj -> C:\Users\ganterd\Desktop\Dissertation\Release\MeshCreator.exe
        FinalizeBuildStatus:
          Deleting file "Release\MeshCreator.unsuccessfulbuild".
          Touching "Release\MeshCreator.lastbuildstate".
-     1>Done Building Project "C:\Users\gante_000\git\dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" (build target(s)).
+     1>Done Building Project "C:\Users\ganterd\Desktop\Dissertation\KTMMeshCreator\KTMMeshCreator.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:35.88
+Time Elapsed 00:00:00.23

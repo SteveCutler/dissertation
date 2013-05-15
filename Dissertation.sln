@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KTMKinectRecorder", "KTMKinectRecorder\KTMKinectRecorder.vcxproj", "{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KinectRecorder", "KTMKinectRecorder\KTMKinectRecorder.vcxproj", "{1B7FAB9E-ECA1-43C5-9CAA-E3921592F389}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "KTMMeshCreator", "KTMMeshCreator\KTMMeshCreator.vcxproj", "{C9A0713B-C332-4CB1-83A8-D700FA671BA5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MeshCreator", "KTMMeshCreator\KTMMeshCreator.vcxproj", "{C9A0713B-C332-4CB1-83A8-D700FA671BA5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{73D3B61B-726D-4890-A82E-8497B64DF658}"
 EndProject
 Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = Dissertation.vsmdi
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug - VS2012|Win32 = Debug - VS2012|Win32
 		Debug|Win32 = Debug|Win32

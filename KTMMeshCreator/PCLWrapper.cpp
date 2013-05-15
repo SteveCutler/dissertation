@@ -1,8 +1,8 @@
 #include "PCLWrapper.hpp"
 
 KTM::PCLWrapper::PCLWrapper(){
-	mergedCloud = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-	prevCloud = PointCloud::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+	mergedCloud = PointCloud::Ptr(new PointCloud);
+	prevCloud = PointCloud::Ptr(new PointCloud);
 	cloudViewer = new pcl::visualization::CloudViewer("Cloud Viewer");
 	firstRun = true;
 	GlobalTransform = Eigen::Matrix4f::Identity();
@@ -72,7 +72,7 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 		break;
 	}
 
-	pcl::PointCloud<pcl::PointXYZ>::Ptr depthCloud(new pcl::PointCloud<pcl::PointXYZ>);
+	PointCloud::Ptr depthCloud(new PointCloud);
 	depthCloud->resize(depthDataWidth * depthDataHeight);
 
 	if(depthRes != depthTransformationMatrixResolution){
@@ -86,16 +86,53 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 	KTM::PCThreading::depthArrayToVectorPC(depthData, depthDataWidth, depthDataHeight, depthTransformationMatrix, points);
 	KTM::PCThreading::generateNormalsFromVectors(points,depthDataWidth,depthDataHeight,normals);
 
-	Eigen::Vector4f p, n;
-	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
-		p = points[i];
-		n = normals[i];
-	}
+	//-----------------------------
+	// TESTING
+	//-----------------------------
+
+	//Eigen::Matrix4f testTransform;
+	//Eigen::Matrix4f testEstimatedTransform;
+	//testTransform << 
+	//	0.996, 0.086, -0.087, 0,
+	//	-0.087, 0.996, 0, 0.,
+	//	0.087, 0.008, 0.996, 0,
+	//	0, 0, 0, 1;
+
+	////testTransform << 
+	////	1,0,0, 0.1,
+	////	0,1, 0, 0.08,
+	////	0,0,1, 0.06,
+	////	0, 0, 0, 1;
+
+	//Eigen::Vector4f* testPoints = new Eigen::Vector4f[depthDataWidth * depthDataHeight];
+	//Eigen::Vector4f* testNormals = new Eigen::Vector4f[depthDataWidth * depthDataHeight];
+
+	//for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
+	//	testPoints[i] = testTransform * points[i];
+	//	testNormals[i] = testTransform * normals[i];
+	//}
+
+	//ICP(
+	//	depthData,
+	//	depthDataWidth * depthDataHeight,
+	//	points,
+	//	normals,
+	//	depthData,
+	//	testPoints,
+	//	testNormals,
+	//	GlobalTransform,
+	//	&testEstimatedTransform
+	//);
+
+	//-----------------------------
+	// \TESTING
+	//-----------------------------
+
 	//KTM::PCThreading::depthArrayToPointCloud(depthData, depthTransformationMatrix, depthCloud);
 
 	if(firstRun){
 		firstRun = false;
-		//mergedCloud = depthCloud;	
+		prevTransform = GlobalTransform;
 	}else{
 		Eigen::Matrix4f estimatedTransform;
 		ICP(
@@ -106,18 +143,15 @@ bool KTM::PCLWrapper::addToCloud(unsigned short* depthData, int depthDataWidth, 
 			prevDepthData,
 			prevPoints,
 			prevNormals,
-			GlobalTransform,
+			prevTransform,
 			&estimatedTransform
 		);
-		GlobalTransform = estimatedTransform.inverse();
-	}
-
-	for(int i = 0; i < depthDataWidth * depthDataHeight; i++){
-		points[i] = GlobalTransform * points[i];
-		normals[i] = GlobalTransform * normals[i];
+		prevTransform = estimatedTransform;
+		GlobalTransform = estimatedTransform.inverse() * GlobalTransform;
 	}
 
 	KTM::PCThreading::vectorPCToPCLPC(points, depthDataWidth * depthDataHeight, depthCloud);
+	pcl::transformPointCloud(*depthCloud, *depthCloud, GlobalTransform);
 
 	if(NULL != prevPoints)
 		delete[] prevPoints;
@@ -149,11 +183,11 @@ void KTM::PCLWrapper::ICP(
 	float normalThreshold
 ){
 	*estimatedTransform = guessTransform;
-	float sum = 0;
+	float sum = 10000;
 	float prevSum = -1;
 	int iteration = 0;
 
-	while(abs(sum - prevSum) > costThreshold && iteration++ < maxIterations){
+	while(sum > costThreshold && iteration++ < maxIterations){
 		prevSum = sum;
 		sum = 0;
 		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> x;
@@ -181,21 +215,17 @@ void KTM::PCLWrapper::ICP(
 			}
 		}
 
+		if(sum < costThreshold)
+			break;
+
 		xCoM = xCoM / x.size();
 		pCoM = pCoM / p.size();
 
-		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> x_;
-		std::vector<const Eigen::Vector3f, Eigen::aligned_allocator<const Eigen::Vector3f>> p_;
-
-		for(int i = 0; i < x.size(); i++){
-			x_.push_back(x[i] - xCoM);
-			p_.push_back(p[i] - pCoM);
-		}
-
 		Eigen::Matrix3f W = Eigen::Matrix3f::Zero();
-
-		for(int i = 0; i < x_.size(); i++){
-			W = W + (x_[i] * p_[i].transpose());
+		for(int i = 0; i < x.size(); i++){
+			Eigen::Vector3f x_ = x[i] - xCoM;
+			Eigen::Vector3f p_ = p[i] - pCoM;
+			W = W + (x_ * p_.transpose());
 		}
 		
 		Eigen::JacobiSVD<Eigen::Matrix3f> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -209,7 +239,7 @@ void KTM::PCLWrapper::ICP(
 		Eigen::Matrix3f V = svd.matrixV();
 
 		Eigen::Matrix3f R = U * V.transpose();
-		Eigen::Vector3f t = xCoM - (R * pCoM);
+		Eigen::Vector3f t =  xCoM - (R * pCoM);
 		
 		(*estimatedTransform)(0,0) = R(0,0);
 		(*estimatedTransform)(0,1) = R(0,1);
